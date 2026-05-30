@@ -1,12 +1,10 @@
 {
-  "name": "RONIX Quotation Management",
-  "short_name": "RONIX Quotation",
+  "name": "RONIX Quotation Rev08",
+  "short_name": "RONIX Rev08",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "background_color": "#ffffff",
   "theme_color": "#0f172a",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
