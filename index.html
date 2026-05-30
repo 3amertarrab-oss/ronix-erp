@@ -4,9 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RONIX STEEL - Executive Quotation System</title>
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RONIX Quotation">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
+
 <style>
 :root{
   --primary:#0f172a; --secondary:#334155; --muted:#64748b; --line:#d8dee8;
@@ -540,57 +545,109 @@ html[dir="rtl"] .term-divider{
 }
 
 
-
-/* ===== RONIX APP LAYER: clients + quotation archive (does not affect PDF output) ===== */
-.ronix-app-shell{max-width:1040px;margin:0 auto 18px;background:linear-gradient(135deg,#071a3a,#0f172a);border-radius:24px;padding:18px;box-shadow:0 18px 45px rgba(15,23,42,.14);color:#fff;border:1px solid rgba(255,255,255,.12)}
-.ronix-app-top{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
-.ronix-app-brand{display:flex;align-items:center;gap:14px}.ronix-app-mark{width:54px;height:54px;border-radius:16px;background:#fff;color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:950;border-bottom:5px solid #f59e0b;letter-spacing:1px}.ronix-app-brand h2{margin:0;font-size:22px;line-height:1.15}.ronix-app-brand p{margin:4px 0 0;color:#cbd5e1;font-size:12px;font-weight:700}.ronix-app-actions{display:flex;gap:8px;flex-wrap:wrap}.app-btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;font-size:13px;cursor:pointer;color:#fff;background:#334155}.app-btn.primary{background:#2563eb}.app-btn.green{background:#16a34a}.app-btn.orange{background:#f59e0b;color:#0f172a}.app-btn.red{background:#dc2626}.app-btn.ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)}
-.ronix-app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}.app-panel{background:#fff;color:#0f172a;border:1px solid #d8dee8;border-radius:18px;padding:14px;box-shadow:0 10px 22px rgba(15,23,42,.06)}.app-panel h3{margin:0 0 10px;font-size:15px;font-weight:950;display:flex;justify-content:space-between;gap:8px;align-items:center}.app-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.app-field{display:flex;flex-direction:column;gap:4px}.app-field label{font-size:11px;color:#64748b;font-weight:900}.app-field input,.app-field select,.app-field textarea{width:100%;border:1px solid #d8dee8;border-radius:10px;padding:9px 10px;font:inherit;font-size:13px;background:#fbfdff;color:#0f172a}.app-field textarea{min-height:65px;resize:vertical}.app-list{max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:8px}.app-list-item{border:1px solid #e2e8f0;border-radius:13px;padding:10px;background:#fbfdff;cursor:pointer}.app-list-item:hover{border-color:#2563eb}.app-list-title{font-weight:950;font-size:13px;color:#0f172a}.app-list-meta{font-size:11px;color:#64748b;margin-top:3px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.app-status{display:inline-flex;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900;background:#dcfce7;color:#166534}.app-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.app-search{width:100%;border:1px solid #d8dee8;border-radius:11px;padding:10px;background:#fff;margin-bottom:10px}.app-muted{font-size:11px;color:#64748b;line-height:1.5;margin-top:8px}.app-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:999px;z-index:9999;font-weight:900;box-shadow:0 14px 30px rgba(0,0,0,.25);display:none}.app-toast.show{display:block}.app-section-title{max-width:1040px;margin:0 auto 10px;color:#0f172a;font-weight:950;font-size:16px;display:flex;align-items:center;gap:8px}.app-section-title::before{content:"";width:8px;height:22px;border-radius:99px;background:#f59e0b;display:inline-block}
-@media(max-width:760px){.ronix-app-grid{grid-template-columns:1fr}.app-field-grid{grid-template-columns:1fr}.ronix-app-shell{border-radius:0;margin:0 0 12px;padding:14px}.app-panel{border-radius:16px}.ronix-app-brand h2{font-size:18px}.app-btn{font-size:12px;padding:9px 10px}}
-@media print{.ronix-app-shell,.app-toast,.app-section-title{display:none!important}}
+/* ===== RONIX Rev08 App Layer: clients, projects, quotation archive.
+   This layer is screen-only; @media print hides it to keep the PDF template unchanged. ===== */
+.ronix-app-shell{max-width:1040px;margin:0 auto 18px;background:#0f172a;color:#fff;border-radius:22px;padding:14px 16px;box-shadow:0 16px 36px rgba(15,23,42,.16);display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.ronix-app-brand{display:flex;flex-direction:column;gap:3px}
+.ronix-app-brand strong{font-size:18px;letter-spacing:.4px}.ronix-app-brand span{font-size:12px;color:#cbd5e1}
+.ronix-app-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.app-btn{border:0;border-radius:11px;padding:10px 13px;font-weight:900;font-size:12.5px;cursor:pointer;color:#0f172a;background:#fff}
+.app-btn.primary{background:#f59e0b;color:#111827}.app-btn.green{background:#16a34a;color:#fff}.app-btn.blue{background:#2563eb;color:#fff}.app-btn.red{background:#dc2626;color:#fff}.app-btn.gray{background:#64748b;color:#fff}
+.ronix-app-panel{max-width:1040px;margin:0 auto 18px;background:#fff;border:1px solid #d8dee8;border-radius:20px;box-shadow:0 14px 34px rgba(15,23,42,.08);padding:16px;display:none}
+.ronix-app-panel.active{display:block}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;border-bottom:1px solid #e5e7eb;padding-bottom:10px}
+.panel-head h2{font-size:17px;margin:0;color:#0f172a}.panel-actions{display:flex;gap:8px;flex-wrap:wrap}
+.app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:15px;padding:12px}
+.stat-card span{display:block;color:#64748b;font-size:12px;font-weight:800}.stat-card strong{display:block;color:#0f172a;font-size:22px;margin-top:5px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.form-field{display:flex;flex-direction:column;gap:5px}.form-field label{font-size:12px;font-weight:900;color:#334155}
+.form-field input,.form-field select,.form-field textarea,.search-input{border:1px solid #cbd5e1;border-radius:10px;padding:10px;font:inherit;background:#fff;color:#0f172a}.form-field textarea{min-height:76px}
+.table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:14px}.app-table{border:0!important;margin:0!important;border-radius:0!important}.app-table th{font-size:12px}.app-table td{font-size:12.5px;white-space:nowrap}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}.mini-btn{border:0;border-radius:8px;padding:7px 9px;font-weight:900;font-size:11px;cursor:pointer;background:#e2e8f0;color:#0f172a}
+.empty-note{padding:18px;text-align:center;color:#64748b;font-weight:800}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;background:#e2e8f0;color:#0f172a;font-size:11px;font-weight:900}
+.status-Sent{background:#dbeafe;color:#1e40af}.status-Draft{background:#f1f5f9;color:#475569}.status-Approved{background:#dcfce7;color:#166534}.status-Rejected{background:#fee2e2;color:#991b1b}.status-Cancelled{background:#fef3c7;color:#92400e}
+.toast{position:fixed;z-index:9999;left:50%;bottom:18px;transform:translateX(-50%);background:#0f172a;color:#fff;border-radius:12px;padding:11px 15px;box-shadow:0 12px 30px rgba(15,23,42,.25);font-weight:800;display:none}
+.toast.show{display:block}.app-hidden{display:none!important}
+@media(max-width:760px){.ronix-app-shell{grid-template-columns:1fr}.ronix-app-nav{justify-content:flex-start}.app-grid,.form-grid{grid-template-columns:1fr}.panel-head{align-items:flex-start;flex-direction:column}.control-panel{margin-top:0}}
+@media print{.ronix-app-shell,.ronix-app-panel,.toast{display:none!important}}
 
 </style>
 </head>
 <body>
 
 <div class="ronix-app-shell" id="ronixAppShell">
-  <div class="ronix-app-top">
-    <div class="ronix-app-brand">
-      <div class="ronix-app-mark">RONIX</div>
-      <div><h2>RONIX Quotation App</h2><p>إدارة العملاء والأرشيف فقط — قالب الـ PDF محفوظ كما هو</p></div>
-    </div>
-    <div class="ronix-app-actions">
-      <button class="app-btn primary" onclick="ronixNewQuote()">+ عرض جديد</button>
-      <button class="app-btn green" onclick="ronixSaveQuote('draft')">حفظ العرض</button>
-      <button class="app-btn orange" onclick="ronixSaveClientFromForm()">حفظ العميل</button>
-      <button class="app-btn ghost" onclick="ronixExportBackup()">Backup</button>
-      <label class="app-btn ghost" style="display:inline-flex;align-items:center;gap:6px"><input type="file" accept="application/json" onchange="ronixImportBackup(event)" style="display:none">Restore</label>
-    </div>
+  <div class="ronix-app-brand">
+    <strong>RONIX Quotation Management</strong>
+    <span>إدارة العملاء والأرشيف فوق قالب Rev07 بدون تغيير مخرجات PDF</span>
   </div>
-  <div class="ronix-app-grid">
-    <div class="app-panel">
-      <h3>قاعدة العملاء <button class="app-btn primary" onclick="ronixSaveClientFromForm()">+ إضافة/تحديث</button></h3>
-      <input class="app-search" id="ronixClientSearch" placeholder="بحث في العملاء..." oninput="ronixRenderClients()">
-      <div class="app-field-grid">
-        <div class="app-field"><label>اختيار عميل محفوظ</label><select id="ronixClientSelect" onchange="ronixApplySelectedClient()"><option value="">اختر عميل...</option></select></div>
-        <div class="app-field"><label>ملاحظة داخلية</label><input id="ronixClientNote" placeholder="مثال: عميل مهم / متابعة"></div>
-      </div>
-      <div class="app-list" id="ronixClientsList"></div>
-      <div class="app-muted">اختيار العميل يملأ بيانات عرض السعر، ولا يغير شكل الـ PDF.</div>
-    </div>
-    <div class="app-panel">
-      <h3>أرشيف عروض الأسعار <button class="app-btn green" onclick="ronixSaveQuote('draft')">حفظ يدوي</button></h3>
-      <input class="app-search" id="ronixQuoteSearch" placeholder="بحث برقم العرض أو العميل أو المشروع..." oninput="ronixRenderQuotes()">
-      <div class="app-list" id="ronixQuotesList"></div>
-      <div class="app-toolbar">
-        <button class="app-btn green" onclick="ronixSaveQuote('printed'); printDoc()">حفظ وطباعة PDF</button>
-        <button class="app-btn red" onclick="ronixClearArchiveConfirm()">مسح الأرشيف</button>
-      </div>
-      <div class="app-muted">عند الطباعة يتم أرشفة العرض تلقائياً مع رقمه وبياناته وقيمته.</div>
-    </div>
+  <div class="ronix-app-nav">
+    <button class="app-btn primary" onclick="RonixApp.showPanel('dashboard')">الرئيسية</button>
+    <button class="app-btn" onclick="RonixApp.newQuotation()">عرض جديد</button>
+    <button class="app-btn blue" onclick="RonixApp.showPanel('clients')">العملاء</button>
+    <button class="app-btn green" onclick="RonixApp.showPanel('archive')">أرشيف العروض</button>
+    <button class="app-btn gray" onclick="RonixApp.showPanel('backup')">Backup</button>
   </div>
 </div>
-<div class="app-section-title">قالب عرض السعر المعتمد — المخرجات PDF كما هي</div>
+
+<section class="ronix-app-panel active" id="panel-dashboard">
+  <div class="panel-head">
+    <h2>لوحة التحكم</h2>
+    <div class="panel-actions">
+      <button class="app-btn primary" onclick="RonixApp.saveQuotation('draft')">حفظ مسودة</button>
+      <button class="app-btn green" onclick="printDoc()">حفظ وطباعة PDF</button>
+    </div>
+  </div>
+  <div class="app-grid">
+    <div class="stat-card"><span>العملاء</span><strong id="statClients">0</strong></div>
+    <div class="stat-card"><span>المشاريع</span><strong id="statProjects">0</strong></div>
+    <div class="stat-card"><span>العروض</span><strong id="statQuotes">0</strong></div>
+    <div class="stat-card"><span>إجمالي العروض</span><strong id="statTotal">0</strong></div>
+  </div>
+</section>
+
+<section class="ronix-app-panel" id="panel-clients">
+  <div class="panel-head">
+    <h2>قاعدة العملاء والمشاريع</h2>
+    <div class="panel-actions">
+      <button class="app-btn primary" onclick="RonixApp.saveClientFromForm()">حفظ العميل</button>
+      <button class="app-btn blue" onclick="RonixApp.fillClientFormFromQuotation()">من العرض الحالي</button>
+    </div>
+  </div>
+  <div class="form-grid">
+    <div class="form-field"><label>اسم العميل</label><input id="appClientName" placeholder="مثال: شركة السويدي"></div>
+    <div class="form-field"><label>اسم المشروع</label><input id="appProjectName" placeholder="مثال: مصنع العاشر"></div>
+    <div class="form-field"><label>الهاتف</label><input id="appClientPhone" placeholder="رقم الهاتف"></div>
+    <div class="form-field"><label>الإيميل</label><input id="appClientEmail" placeholder="email@example.com"></div>
+    <div class="form-field"><label>العنوان</label><input id="appClientAddress" placeholder="العنوان"></div>
+    <div class="form-field"><label>ملاحظات</label><input id="appClientNotes" placeholder="ملاحظات مختصرة"></div>
+  </div>
+  <div style="margin:14px 0"><input class="search-input" id="clientSearch" oninput="RonixApp.renderClients()" placeholder="بحث في العملاء أو المشاريع..."></div>
+  <div class="table-wrap"><table class="app-table"><thead><tr><th>العميل</th><th>المشروع</th><th>الهاتف</th><th>الإيميل</th><th>إجراءات</th></tr></thead><tbody id="clientsBody"></tbody></table></div>
+</section>
+
+<section class="ronix-app-panel" id="panel-archive">
+  <div class="panel-head">
+    <h2>أرشيف عروض الأسعار</h2>
+    <div class="panel-actions">
+      <button class="app-btn primary" onclick="RonixApp.saveQuotation('draft')">حفظ العرض الحالي</button>
+      <select id="statusFilter" onchange="RonixApp.renderArchive()" class="search-input" style="width:auto;padding:8px">
+        <option value="">كل الحالات</option><option>Draft</option><option>Sent</option><option>Approved</option><option>Rejected</option><option>Cancelled</option>
+      </select>
+    </div>
+  </div>
+  <div style="margin-bottom:14px"><input class="search-input" id="archiveSearch" oninput="RonixApp.renderArchive()" placeholder="بحث برقم العرض أو العميل أو المشروع..."></div>
+  <div class="table-wrap"><table class="app-table"><thead><tr><th>رقم العرض</th><th>Rev</th><th>العميل</th><th>المشروع</th><th>التاريخ</th><th>القيمة</th><th>Status</th><th>إجراءات</th></tr></thead><tbody id="archiveBody"></tbody></table></div>
+</section>
+
+<section class="ronix-app-panel" id="panel-backup">
+  <div class="panel-head"><h2>النسخ الاحتياطي والاسترجاع</h2></div>
+  <div class="panel-actions">
+    <button class="app-btn green" onclick="RonixApp.exportBackup()">تحميل Backup</button>
+    <label class="app-btn blue" style="display:inline-block;cursor:pointer">استرجاع Backup <input type="file" accept="application/json" onchange="RonixApp.importBackup(event)" style="display:none"></label>
+    <button class="app-btn red" onclick="RonixApp.clearAllData()">مسح قاعدة البيانات</button>
+  </div>
+  <p style="color:#64748b;font-weight:800">البيانات محفوظة محلياً داخل المتصفح على نفس الجهاز. احتفظ بملف Backup بشكل دوري.</p>
+</section>
+<div class="toast" id="ronixToast"></div>
 
 <div class="control-panel">
   <div class="vat-control">
@@ -636,7 +693,7 @@ html[dir="rtl"] .term-divider{
       <h3 id="repTitle"></h3>
       <p><strong id="engineerLabel"></strong> <input class="input-clean" id="engineerName" value="ENG. AMER TARRAB"></p>
       <p><strong id="mobileLabel"></strong> <input class="input-clean" id="engineerPhone" value="01149185161"></p>
-      <p><strong id="emailLabel"></strong> <input class="input-clean" id="engineerEmail" value="3amertarrab@gmail.com"></p>
+      <p><strong id="emailLabel"></strong> <input class="input-clean" value="3amertarrab@gmail.com"></p>
     </div>
   </section>
   <table>
@@ -956,71 +1013,227 @@ document.addEventListener("input", function(e){
 window.addEventListener("beforeprint", syncFooterContact);
 
 window.onload=()=>{setLanguage("ar");syncFooterContact();};
-
-
-/* ===== RONIX APP STORAGE LAYER - added without changing quotation PDF template ===== */
-const RONIX_APP_KEYS = { clients:"ronix_rev07_clients", quotes:"ronix_rev07_quotes" };
-function ronixToast(msg){let t=document.getElementById('ronixToast');if(!t){t=document.createElement('div');t.id='ronixToast';t.className='app-toast';document.body.appendChild(t);}t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
-function ronixLoad(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
-function ronixStore(key,data){localStorage.setItem(key,JSON.stringify(data));}
-function ronixEl(id){return document.getElementById(id)}
-function ronixVal(id){const e=ronixEl(id);return e?e.value:''}
-function ronixSet(id,val){const e=ronixEl(id);if(e){e.value=val||'';e.dispatchEvent(new Event('input',{bubbles:true}));}}
-function ronixCurrentTotal(){updateAll();const text=(ronixEl('grandValue')?.innerText||'0').replace(/[^0-9.]/g,'');return Number(text)||0;}
-function ronixCollectState(){
-  updateAll();
-  const inputs=[]; document.querySelectorAll('.quotation input, .control-panel input').forEach((el,i)=>{inputs.push({id:el.id||'', index:i, type:el.type, value:el.value, checked:!!el.checked});});
-  return {lang:currentLang, inputs, total:ronixCurrentTotal(), htmlDir:document.documentElement.dir};
-}
-function ronixApplyState(state){
-  if(!state)return; if(state.lang) setLanguage(state.lang);
-  const all=[...document.querySelectorAll('.quotation input, .control-panel input')];
-  (state.inputs||[]).forEach(item=>{let el=item.id?document.getElementById(item.id):all[item.index]; if(!el)return; if(item.type==='checkbox')el.checked=!!item.checked; else el.value=item.value;});
-  updateAll(); ronixSyncFooterContact && ronixSyncFooterContact();
-}
-function ronixSummary(){return {id:crypto.randomUUID?crypto.randomUUID():String(Date.now()), quoteRef:ronixVal('quoteRef'), date:ronixVal('quoteDate'), client:ronixVal('clientName'), project:ronixVal('subjectValue'), engineer:ronixVal('engineerName'), phone:ronixVal('engineerPhone'), email:ronixVal('engineerEmail'), total:ronixCurrentTotal(), updatedAt:new Date().toISOString()};}
-function ronixSaveClientFromForm(){
-  const c=ronixSummary(); if(!c.client.trim()){ronixToast('اكتب اسم العميل أولاً');return;}
-  const clients=ronixLoad(RONIX_APP_KEYS.clients); const idx=clients.findIndex(x=>(x.client||'').trim()===c.client.trim());
-  const note=ronixVal('ronixClientNote'); const data={...c,note};
-  if(idx>=0)clients[idx]={...clients[idx],...data}; else clients.unshift(data);
-  ronixStore(RONIX_APP_KEYS.clients,clients); ronixRenderClients(); ronixToast('تم حفظ العميل');
-}
-function ronixApplyClient(c){ronixSet('clientName',c.client);ronixSet('subjectValue',c.project);ronixSet('engineerName',c.engineer);ronixSet('engineerPhone',c.phone);ronixSet('engineerEmail',c.email);ronixSet('ronixClientNote',c.note);updateAll();ronixToast('تم إدخال بيانات العميل');}
-function ronixApplySelectedClient(){const id=ronixVal('ronixClientSelect'); if(!id)return; const c=ronixLoad(RONIX_APP_KEYS.clients).find(x=>x.id===id); if(c)ronixApplyClient(c);}
-function ronixRenderClients(){
-  const q=(ronixVal('ronixClientSearch')||'').toLowerCase(); const list=ronixEl('ronixClientsList'); const sel=ronixEl('ronixClientSelect'); if(!list||!sel)return;
-  const clients=ronixLoad(RONIX_APP_KEYS.clients).filter(c=>[c.client,c.project,c.phone,c.email].join(' ').toLowerCase().includes(q));
-  sel.innerHTML='<option value="">اختر عميل...</option>'+ronixLoad(RONIX_APP_KEYS.clients).map(c=>`<option value="${c.id}">${c.client||'بدون اسم'} — ${c.project||''}</option>`).join('');
-  list.innerHTML=clients.length?clients.map(c=>`<div class="app-list-item" onclick='ronixApplyClient(${JSON.stringify(c).replace(/'/g,"&#39;")})'><div class="app-list-title">${c.client||'بدون اسم'}</div><div class="app-list-meta"><span>${c.project||''}</span><span>${c.phone||''}</span></div></div>`).join(''):'<div class="app-muted">لا يوجد عملاء محفوظون بعد.</div>';
-}
-function ronixSaveQuote(status='draft'){
-  const s=ronixSummary(); const quotes=ronixLoad(RONIX_APP_KEYS.quotes); const state=ronixCollectState();
-  const existing=quotes.findIndex(x=>x.quoteRef===s.quoteRef);
-  const record={...s,status,state,printedAt:status==='printed'?new Date().toISOString():undefined};
-  if(existing>=0)quotes[existing]={...quotes[existing],...record}; else quotes.unshift(record);
-  ronixStore(RONIX_APP_KEYS.quotes,quotes); ronixRenderQuotes(); ronixToast(status==='printed'?'تم حفظ العرض في الأرشيف قبل الطباعة':'تم حفظ العرض');
-}
-function ronixLoadQuote(id){const q=ronixLoad(RONIX_APP_KEYS.quotes).find(x=>x.id===id); if(!q)return; ronixApplyState(q.state); ronixToast('تم فتح العرض من الأرشيف');}
-function ronixDuplicateQuote(id){const q=ronixLoad(RONIX_APP_KEYS.quotes).find(x=>x.id===id); if(!q)return; ronixApplyState(q.state); ronixSet('quoteRef',ronixNextRef()); ronixSet('quoteDate',new Date().toISOString().slice(0,10)); updateAll(); ronixToast('تم نسخ العرض كعرض جديد');}
-function ronixDeleteQuote(id){if(!confirm('حذف هذا العرض من الأرشيف؟'))return; const quotes=ronixLoad(RONIX_APP_KEYS.quotes).filter(x=>x.id!==id); ronixStore(RONIX_APP_KEYS.quotes,quotes); ronixRenderQuotes();}
-function ronixRenderQuotes(){
-  const q=(ronixVal('ronixQuoteSearch')||'').toLowerCase(); const list=ronixEl('ronixQuotesList'); if(!list)return;
-  const quotes=ronixLoad(RONIX_APP_KEYS.quotes).filter(x=>[x.quoteRef,x.client,x.project,x.date].join(' ').toLowerCase().includes(q));
-  list.innerHTML=quotes.length?quotes.map(x=>`<div class="app-list-item"><div class="app-list-title">${x.quoteRef||'بدون رقم'} <span class="app-status">${x.status==='printed'?'مطبوع':'مسودة'}</span></div><div class="app-list-meta"><span>${x.client||''}</span><span>${x.date||''}</span><span>${(x.total||0).toLocaleString()} EGP</span></div><div class="app-toolbar"><button class="app-btn primary" onclick="ronixLoadQuote('${x.id}')">فتح</button><button class="app-btn green" onclick="ronixDuplicateQuote('${x.id}')">نسخ</button><button class="app-btn red" onclick="ronixDeleteQuote('${x.id}')">حذف</button></div></div>`).join(''):'<div class="app-muted">لا يوجد عروض محفوظة بعد.</div>';
-}
-function ronixNextRef(){const y=new Date().getFullYear(); const quotes=ronixLoad(RONIX_APP_KEYS.quotes); let max=0; quotes.forEach(q=>{const m=String(q.quoteRef||'').match(/(\d{1,5})(?!.*\d)/); if(m)max=Math.max(max,Number(m[1]));}); return `RNX-Q-${String(max+1).padStart(3,'0')}/${y}`;}
-function ronixNewQuote(){ronixSet('quoteRef',ronixNextRef()); ronixSet('quoteDate',new Date().toISOString().slice(0,10)); ronixSet('clientName',''); ronixSet('subjectValue',''); updateAll(); ronixToast('تم إنشاء عرض جديد');}
-function ronixExportBackup(){const data={version:'RONIX-Rev07-App',exportedAt:new Date().toISOString(),clients:ronixLoad(RONIX_APP_KEYS.clients),quotes:ronixLoad(RONIX_APP_KEYS.quotes)}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='RONIX_Backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(a.href);}
-function ronixImportBackup(e){const f=e.target.files&&e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{try{const d=JSON.parse(r.result); if(d.clients)ronixStore(RONIX_APP_KEYS.clients,d.clients); if(d.quotes)ronixStore(RONIX_APP_KEYS.quotes,d.quotes); ronixRenderClients(); ronixRenderQuotes(); ronixToast('تم استيراد النسخة الاحتياطية');}catch(err){alert('ملف النسخة الاحتياطية غير صحيح');}}; r.readAsText(f); e.target.value='';}
-function ronixClearArchiveConfirm(){if(confirm('مسح كل أرشيف العروض؟')){ronixStore(RONIX_APP_KEYS.quotes,[]);ronixRenderQuotes();}}
-function ronixSyncFooterContact(){const n=ronixVal('engineerName'),p=ronixVal('engineerPhone'); if(ronixEl('footerEngineerName'))ronixEl('footerEngineerName').innerText=n||'ENG. AMER TARRAB'; if(ronixEl('footerEngineerPhone'))ronixEl('footerEngineerPhone').innerText=p||'01149185161';}
-document.addEventListener('input',e=>{if(['clientName','subjectValue','engineerName','engineerPhone','engineerEmail','quoteRef','quoteDate'].includes(e.target.id)){ronixSyncFooterContact();}});
-const ronixOriginalPrintDoc = printDoc;
-printDoc = function(){ ronixSaveQuote('printed'); setTimeout(()=>ronixOriginalPrintDoc(),80); };
-window.addEventListener('DOMContentLoaded',()=>{ronixRenderClients();ronixRenderQuotes();ronixSyncFooterContact();});
-setTimeout(()=>{ronixRenderClients();ronixRenderQuotes();ronixSyncFooterContact();},200);
 </script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}</script>
+
+<script>
+/* ===== RONIX Rev08 App Data Layer ===== */
+(function(){
+  const KEY = "ronix_rev08_db";
+  const VERSION = "Rev08-App";
+  const $ = (id)=>document.getElementById(id);
+  const allById = (id)=>Array.from(document.querySelectorAll('[id="'+id+'"]'));
+  const getFirst = (id)=>allById(id)[0] || null;
+  const val = (id)=>{const el=getFirst(id); return el ? (el.type==="checkbox"?el.checked:el.value) : "";};
+  const setVal = (id,value)=>{
+    allById(id).forEach(el=>{
+      if(el.type==="checkbox") el.checked=!!value;
+      else if("value" in el) el.value=value ?? "";
+      else el.innerText=value ?? "";
+    });
+  };
+  function db(){
+    try{return JSON.parse(localStorage.getItem(KEY)) || {version:VERSION,clients:[],quotations:[],counter:{}};}
+    catch(e){return {version:VERSION,clients:[],quotations:[],counter:{}};}
+  }
+  function saveDB(d){localStorage.setItem(KEY,JSON.stringify(d));}
+  function uid(prefix){return prefix+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7);}
+  function toast(msg){const t=$("ronixToast"); if(!t) return; t.innerText=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2300);}
+  function moneyNumber(){
+    if(typeof updateAll==="function") updateAll();
+    const txt = ($("grandValue")?.innerText || "0").replace(/[^\d.]/g,"");
+    return Number(txt)||0;
+  }
+  function nextQuotationRef(d){
+    const y = new Date().getFullYear();
+    d.counter[y] = (d.counter[y] || 0) + 1;
+    return "RON-Q-"+y+"-"+String(d.counter[y]).padStart(4,"0")+"-Rev0";
+  }
+  function captureInputs(){
+    const data = {};
+    document.querySelectorAll("input[id],textarea[id],select[id]").forEach(el=>{
+      if(!data[el.id]) data[el.id] = el.type==="checkbox" ? el.checked : el.value;
+    });
+    data.currentLang = window.currentLang || document.documentElement.lang || "ar";
+    return data;
+  }
+  function restoreInputs(data){
+    if(!data) return;
+    Object.keys(data).forEach(k=>{
+      if(k==="currentLang") return;
+      setVal(k,data[k]);
+    });
+    if(typeof setLanguage==="function" && data.currentLang){ try{setLanguage(data.currentLang);}catch(e){} }
+    if(typeof updateAll==="function") updateAll();
+    if(typeof syncFooterContact==="function") syncFooterContact();
+  }
+  function applyClientToQuotation(c){
+    if(!c) return;
+    setVal("clientName", c.name || "");
+    if(c.project) setVal("subjectValue", c.project);
+    if(c.phone) setVal("engineerPhone", val("engineerPhone") || c.phone);
+    if(typeof updateAll==="function") updateAll();
+    toast("تم تعبئة بيانات العميل داخل العرض");
+  }
+  function showPanel(name){
+    document.querySelectorAll(".ronix-app-panel").forEach(p=>p.classList.remove("active"));
+    const panel=$("panel-"+name);
+    if(panel) panel.classList.add("active");
+    renderAll();
+  }
+  function fillClientFormFromQuotation(){
+    $("appClientName").value = val("clientName") || "";
+    $("appProjectName").value = val("subjectValue") || "";
+    $("appClientPhone").value = "";
+    $("appClientEmail").value = "";
+    $("appClientAddress").value = "";
+    $("appClientNotes").value = "";
+    showPanel("clients");
+  }
+  function saveClientFromForm(){
+    const d=db();
+    const name=$("appClientName").value.trim();
+    const project=$("appProjectName").value.trim();
+    if(!name){toast("اكتب اسم العميل أولاً");return;}
+    let c=d.clients.find(x=>x.name.trim()===name && (x.project||"").trim()===project);
+    if(!c){c={id:uid("client"),createdAt:new Date().toISOString()}; d.clients.unshift(c);}
+    Object.assign(c,{
+      name, project,
+      phone:$("appClientPhone").value.trim(),
+      email:$("appClientEmail").value.trim(),
+      address:$("appClientAddress").value.trim(),
+      notes:$("appClientNotes").value.trim(),
+      updatedAt:new Date().toISOString()
+    });
+    saveDB(d); renderAll(); toast("تم حفظ العميل");
+  }
+  function editClient(id){
+    const c=db().clients.find(x=>x.id===id); if(!c) return;
+    $("appClientName").value=c.name||"";$("appProjectName").value=c.project||"";$("appClientPhone").value=c.phone||"";$("appClientEmail").value=c.email||"";$("appClientAddress").value=c.address||"";$("appClientNotes").value=c.notes||"";
+    showPanel("clients");
+  }
+  function deleteClient(id){
+    if(!confirm("حذف العميل من القاعدة؟")) return;
+    const d=db(); d.clients=d.clients.filter(x=>x.id!==id); saveDB(d); renderAll(); toast("تم حذف العميل");
+  }
+  function saveQuotation(mode){
+    const d=db();
+    let ref = val("quoteRef").trim();
+    if(!ref || ref==="RNX-Q-002/2026"){ ref = nextQuotationRef(d); setVal("quoteRef",ref); }
+    if(!val("quoteDate")) setVal("quoteDate", new Date().toISOString().slice(0,10));
+    if(typeof updateAll==="function") updateAll();
+    const existing = d.quotations.find(q=>q.ref===ref);
+    const record = existing || {id:uid("quote"),createdAt:new Date().toISOString(),ref};
+    Object.assign(record,{
+      ref,
+      rev:(ref.match(/Rev(\d+)/i)||[])[1] ? "Rev"+(ref.match(/Rev(\d+)/i)||[])[1] : "Rev0",
+      clientName:val("clientName"),
+      projectName:val("subjectValue"),
+      quoteDate:val("quoteDate"),
+      total:moneyNumber(),
+      status: mode==="printed" ? "Sent" : (record.status || "Draft"),
+      printedAt: mode==="printed" ? new Date().toISOString() : record.printedAt,
+      updatedAt:new Date().toISOString(),
+      inputs:captureInputs()
+    });
+    if(!existing) d.quotations.unshift(record);
+    saveDB(d); renderAll(); return record;
+  }
+  function loadQuotation(id){
+    const q=db().quotations.find(x=>x.id===id); if(!q) return;
+    restoreInputs(q.inputs); showPanel("dashboard"); toast("تم فتح العرض: "+q.ref);
+  }
+  function duplicateQuotation(id){
+    const q=db().quotations.find(x=>x.id===id); if(!q) return;
+    restoreInputs(q.inputs);
+    const d=db(); const ref=nextQuotationRef(d); setVal("quoteRef",ref); saveDB(d);
+    saveQuotation("draft"); showPanel("dashboard"); toast("تم نسخ العرض كعرض جديد");
+  }
+  function createRevision(id){
+    const q=db().quotations.find(x=>x.id===id); if(!q) return;
+    restoreInputs(q.inputs);
+    const base=(q.ref||"").replace(/-?Rev\d+/i,"");
+    const same=db().quotations.filter(x=>(x.ref||"").startsWith(base));
+    let max=0; same.forEach(x=>{const m=(x.ref||"").match(/Rev(\d+)/i); if(m) max=Math.max(max,Number(m[1]));});
+    setVal("quoteRef",base+"-Rev"+(max+1));
+    saveQuotation("draft"); showPanel("dashboard"); toast("تم إنشاء Revision جديد");
+  }
+  function setStatus(id,status){
+    const d=db(); const q=d.quotations.find(x=>x.id===id); if(!q) return;
+    q.status=status; q.updatedAt=new Date().toISOString(); saveDB(d); renderArchive(); renderDashboard();
+  }
+  function deleteQuotation(id){
+    if(!confirm("حذف العرض من الأرشيف؟")) return;
+    const d=db(); d.quotations=d.quotations.filter(x=>x.id!==id); saveDB(d); renderAll(); toast("تم حذف العرض");
+  }
+  function newQuotation(){
+    setVal("quoteRef","");
+    setVal("quoteDate",new Date().toISOString().slice(0,10));
+    setVal("clientName","");
+    setVal("subjectValue","خدمات هندسية");
+    ["qtySteelDesign","qtySteelDetail","qtyConcrete"].forEach(id=>setVal(id, id==="qtySteelDetail"?3:1));
+    if(typeof updateAll==="function") updateAll();
+    showPanel("dashboard"); toast("عرض جديد جاهز");
+  }
+  function renderDashboard(){
+    const d=db();
+    $("statClients").innerText=d.clients.length;
+    $("statProjects").innerText=new Set(d.clients.map(c=>c.project).filter(Boolean)).size;
+    $("statQuotes").innerText=d.quotations.length;
+    $("statTotal").innerText=d.quotations.reduce((s,q)=>s+(Number(q.total)||0),0).toLocaleString();
+  }
+  function renderClients(){
+    const d=db(); const term=($("clientSearch")?.value||"").toLowerCase();
+    const body=$("clientsBody"); if(!body) return;
+    const list=d.clients.filter(c=>([c.name,c.project,c.phone,c.email].join(" ").toLowerCase()).includes(term));
+    body.innerHTML=list.length?list.map(c=>`<tr>
+      <td>${esc(c.name)}</td><td>${esc(c.project||"")}</td><td>${esc(c.phone||"")}</td><td>${esc(c.email||"")}</td>
+      <td><div class="row-actions"><button class="mini-btn" onclick="RonixApp.applyClient('${c.id}')">استخدام</button><button class="mini-btn" onclick="RonixApp.editClient('${c.id}')">تعديل</button><button class="mini-btn" onclick="RonixApp.deleteClient('${c.id}')">حذف</button></div></td>
+    </tr>`).join(""):`<tr><td colspan="5"><div class="empty-note">لا يوجد عملاء بعد</div></td></tr>`;
+  }
+  function applyClient(id){applyClientToQuotation(db().clients.find(x=>x.id===id));}
+  function renderArchive(){
+    const d=db(); const term=($("archiveSearch")?.value||"").toLowerCase(); const st=$("statusFilter")?.value||"";
+    const body=$("archiveBody"); if(!body) return;
+    const list=d.quotations.filter(q=>(!st||q.status===st) && ([q.ref,q.clientName,q.projectName,q.quoteDate,q.status].join(" ").toLowerCase()).includes(term));
+    body.innerHTML=list.length?list.map(q=>`<tr>
+      <td><strong>${esc(q.ref)}</strong></td><td>${esc(q.rev||"Rev0")}</td><td>${esc(q.clientName||"")}</td><td>${esc(q.projectName||"")}</td><td>${esc(q.quoteDate||"")}</td><td>${Number(q.total||0).toLocaleString()}</td>
+      <td><select onchange="RonixApp.setStatus('${q.id}',this.value)" class="status-pill status-${esc(q.status||'Draft')}"><option ${sel(q.status,'Draft')}>Draft</option><option ${sel(q.status,'Sent')}>Sent</option><option ${sel(q.status,'Approved')}>Approved</option><option ${sel(q.status,'Rejected')}>Rejected</option><option ${sel(q.status,'Cancelled')}>Cancelled</option></select></td>
+      <td><div class="row-actions"><button class="mini-btn" onclick="RonixApp.loadQuotation('${q.id}')">فتح</button><button class="mini-btn" onclick="RonixApp.duplicateQuotation('${q.id}')">نسخ</button><button class="mini-btn" onclick="RonixApp.createRevision('${q.id}')">Revision</button><button class="mini-btn" onclick="RonixApp.deleteQuotation('${q.id}')">حذف</button></div></td>
+    </tr>`).join(""):`<tr><td colspan="8"><div class="empty-note">لا يوجد عروض محفوظة بعد</div></td></tr>`;
+  }
+  function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+  function sel(a,b){return (a||"Draft")===b?"selected":"";}
+  function renderAll(){renderDashboard();renderClients();renderArchive();}
+  function exportBackup(){
+    const blob=new Blob([JSON.stringify(db(),null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="ronix_backup_"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href);
+  }
+  function importBackup(ev){
+    const file=ev.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{try{const d=JSON.parse(reader.result); if(!d.clients||!d.quotations) throw new Error("bad"); saveDB(d); renderAll(); toast("تم استرجاع النسخة الاحتياطية");}catch(e){alert("ملف Backup غير صالح");}};
+    reader.readAsText(file);
+    ev.target.value="";
+  }
+  function clearAllData(){
+    if(confirm("مسح كل العملاء والعروض من هذا الجهاز؟")){localStorage.removeItem(KEY);renderAll();toast("تم مسح البيانات");}
+  }
+  const originalPrint = window.printDoc;
+  window.printDoc = function(){
+    saveQuotation("printed");
+    if(typeof originalPrint==="function") originalPrint();
+    else { if(typeof updateAll==="function") updateAll(); setTimeout(()=>window.print(),80); }
+  };
+  window.RonixApp={showPanel,newQuotation,saveQuotation,fillClientFormFromQuotation,saveClientFromForm,editClient,deleteClient,applyClient,loadQuotation,duplicateQuotation,createRevision,setStatus,deleteQuotation,renderArchive,renderClients,exportBackup,importBackup,clearAllData};
+  window.addEventListener("load",()=>{setTimeout(()=>{renderAll(); if(typeof updateAll==="function") updateAll();},120);});
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+
 </body>
 </html>
