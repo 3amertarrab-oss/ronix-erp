@@ -529,15 +529,12 @@ html[dir="rtl"] .term-divider{
 
 
 
-/* Rev07: exact full original header repeated at top of second print page */
-.print-only-full-header{display:none;}
+/* Rev08 Print Fix: prevent forced blank third page.
+   The duplicate print-only header was forcing a page break before terms.
+   Keep the original PDF content, but do not create an extra header/page. */
+.print-only-full-header{display:none!important;}
 @media print{
-  .print-only-full-header{
-    display:grid!important;
-    page-break-before:always!important;
-    break-before:page!important;
-    margin:0 0 7mm!important;
-  }
+  .print-only-full-header{display:none!important;}
   .print-only-full-header + .reference-terms-section{
     page-break-before:auto!important;
     break-before:auto!important;
