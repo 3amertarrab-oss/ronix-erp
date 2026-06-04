@@ -1,13 +1,15 @@
 {
   "name": "RONIX STEEL - Executive Quotation System",
   "short_name": "RONIX STEEL",
+  "description": "RONIX STEEL Executive Quotation System",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
   "background_color": "#ffffff",
   "theme_color": "#0f172a",
-  "description": "RONIX STEEL Executive Quotation System - Offline PWA",
   "icons": [
     {
       "src": "icon-192.png",

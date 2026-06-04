@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RONIX STEEL - Executive Quotation System</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RONIX STEEL">
+<link rel="apple-touch-icon" href="icon-512.png">
+
 <style>
 :root{
   --primary:#0f172a; --secondary:#334155; --muted:#64748b; --line:#d8dee8;
@@ -630,14 +637,6 @@ html[dir="rtl"] .term-divider{
 }
 
 </style>
-
-<!-- RONIX PWA APP SETTINGS - does not change quotation output -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="RONIX STEEL">
-<link rel="apple-touch-icon" href="icon-512.png">
 </head>
 <body>
 <div class="control-panel">
@@ -1043,7 +1042,6 @@ window.onload=()=>{setLanguage("ar");syncFooterContact();};
 </script>
 
 <script>
-// RONIX PWA registration - keeps the app available from Home Screen
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('./sw.js').catch(function(err){ console.log('SW registration failed', err); });
