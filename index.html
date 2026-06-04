@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RONIX STEEL - Executive Quotation System</title>
-<!-- Rev08 two-page print fix: repeated header without forced page break -->
 <style>
 :root{
   --primary:#0f172a; --secondary:#334155; --muted:#64748b; --line:#d8dee8;
@@ -522,32 +521,123 @@ html[dir="rtl"] .term-divider{
 
 
 
-/* Rev08: repeat full header in print without forcing a third blank page */
+/* Rev07: exact full original header repeated at top of second print page */
 .print-only-full-header{display:none;}
 @media print{
   .print-only-full-header{
     display:grid!important;
-    page-break-before:auto!important;
-    break-before:auto!important;
-    page-break-inside:avoid!important;
-    break-inside:avoid!important;
-    margin:0 0 5mm!important;
+    page-break-before:always!important;
+    break-before:page!important;
+    margin:0 0 7mm!important;
   }
-
   .print-only-full-header + .reference-terms-section{
-    page-break-before:auto!important;
-    break-before:auto!important;
-    page-break-inside:avoid!important;
-    break-inside:avoid!important;
-  }
-
-  .reference-terms-section{
     page-break-before:auto!important;
     break-before:auto!important;
   }
 }
 
+
+/* Rev08 Expert print pagination correction - CSS only */
+@media print{
+  @page{size:A4;margin:9mm 10mm 13mm 10mm!important;}
+  html,body{font-size:9.8px!important;line-height:1.32!important;}
+  .quotation{width:190mm!important;max-width:190mm!important;padding-bottom:12mm!important;}
+
+  .header:not(.print-only-full-header){
+    min-height:31mm!important;
+    padding:5.5mm 7mm!important;
+    margin-bottom:4.5mm!important;
+  }
+  .intro{
+    padding:2.8mm 3.6mm!important;
+    margin-bottom:3.6mm!important;
+    line-height:1.38!important;
+    font-size:9.1px!important;
+  }
+  .info-grid{gap:3mm!important;margin-bottom:3.6mm!important;}
+  .info-card{padding:3mm 3.6mm!important;}
+  .info-card h3{font-size:10px!important;margin-bottom:1.7mm!important;padding-bottom:1.2mm!important;}
+  .info-card p{font-size:8.8px!important;margin:.8mm 0!important;}
+
+  table{margin-bottom:3.6mm!important;}
+  th{padding:1.9mm 1.8mm!important;font-size:8.8px!important;}
+  td{padding:1.7mm 1.8mm!important;font-size:8.7px!important;line-height:1.22!important;}
+  .total-wrap{margin:-.5mm 0 3.8mm!important;}
+  .total-table{width:70mm!important;}
+  .total-table td{padding:1.8mm 2.2mm!important;font-size:8.8px!important;}
+
+  .section:not(.reference-terms-section){
+    page-break-inside:auto!important;
+    break-inside:auto!important;
+    padding:2.8mm 3.6mm!important;
+    margin-bottom:3mm!important;
+    border-radius:3.6mm!important;
+  }
+  .section:not(.reference-terms-section) .section-title{
+    font-size:9.8px!important;
+    margin-bottom:1.5mm!important;
+    padding-bottom:1mm!important;
+  }
+  .branch{padding-inline-start:2.2mm!important;margin-bottom:1.8mm!important;}
+  .branch-title{font-size:8.9px!important;padding-bottom:1mm!important;margin-bottom:1mm!important;}
+  .scope-list li{font-size:8.3px!important;line-height:1.28!important;padding:.35mm 0!important;}
+
+  .print-only-full-header{
+    page-break-before:always!important;
+    break-before:page!important;
+    margin:0 0 5mm!important;
+  }
+  .print-only-full-header + .reference-terms-section{
+    page-break-before:auto!important;
+    break-before:auto!important;
+  }
+
+  .reference-terms-section{
+    page-break-inside:avoid!important;
+    break-inside:avoid!important;
+  }
+  .terms-hero-title{padding:3mm 5mm!important;}
+  .terms-card-grid{padding:3.2mm 5mm 4mm!important;}
+  .term-card{padding:3.2mm 0!important;gap:4mm!important;}
+  .ronix-print-footer{height:8.5mm!important;bottom:3.5mm!important;}
+}
+
+
+/* Rev09 Currency selector */
+.currency-control{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12.5px;
+  font-weight:800;
+  color:#0f172a;
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  padding:8px 10px;
+  border-radius:10px;
+}
+.currency-control select{
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  padding:5px 8px;
+  background:#fff;
+  color:#0f172a;
+  font-weight:800;
+  font-family:inherit;
+}
+@media print{
+  .currency-control{display:none!important;}
+}
+
 </style>
+
+<!-- RONIX PWA APP SETTINGS - does not change quotation output -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RONIX STEEL">
+<link rel="apple-touch-icon" href="icon-512.png">
 </head>
 <body>
 <div class="control-panel">
@@ -555,6 +645,18 @@ html[dir="rtl"] .term-divider{
     <input type="checkbox" id="vatEnabled" checked onchange="updateAll()">
     <label for="vatEnabled" id="vatControlLabel">إظهار الضريبة VAT 14%</label>
   </div>
+
+  <div class="currency-control">
+    <label for="currencySelect" id="currencyLabel">العملة</label>
+    <select id="currencySelect" onchange="updateAll()">
+      <option value="EGP" selected>الجنيه المصري - EGP</option>
+      <option value="SAR">الريال السعودي - SAR</option>
+      <option value="USD">الدولار - USD</option>
+      <option value="AED">الدرهم - AED</option>
+      <option value="SYP">الليرة - SYP</option>
+    </select>
+  </div>
+
   
   <div class="proposal-options-control">
     <strong id="proposalOptionsTitle">خيارات العرض</strong>
@@ -725,7 +827,25 @@ const T = {
   pro:{langBtn:"🌐 English",quoteTitle:"عرض سعر هندسي",quoteTitleEn:"Engineering Quotation",refLabel:"Quotation Ref:",dateLabel:"Date:",intro:"يسر شركة RONIX STEEL تقديم هذا العرض الفني والمالي لتنفيذ الخدمات الهندسية المطلوبة، مع الالتزام بالدقة الفنية وجودة المخرجات الهندسية.",clientTitle:"بيانات العميل",toLabel:"إلى:",subjectLabel:"الموضوع:",repTitle:"مسؤول المشروع",engineerLabel:"المهندس المسؤول:",mobileLabel:"الهاتف:",emailLabel:"البريد:",thCode:"Item Code",thDesc:"وصف الخدمة",thQty:"Qty",thUnit:"Unit Price",thTotal:"Total Amount",subtotalLabel:"Subtotal:",vatLabel:"VAT (14%)",grandLabel:"Grand Total:",steelSectionTitle:"قسم المنشآت المعدنية",steelDesignTitle:"خدمات التصميم والتحليل الإنشائي Structural Analysis",steelDetailTitle:"الرسومات التنفيذية والمخططات الورشية Shop Drawings",concreteSectionTitle:"قسم الخرسانة",concreteDesignTitle:"خدمات التصميم الإنشائي للعناصر الخرسانية Concrete Design",qty:"Qty:",price:"Price:",termsTitle:"الشروط التجارية والتعاقدية",exclusionsTitle:"الاستثناءات",durationPrefix:"Duration:",durationSuffix:"Working Days from Contract Start Date",paymentLine:"Payment Terms: 50% Advance Payment Upon Contract Award, and 50% Upon Submission of Final Check Report.",validityLine:"العرض صالح لمدة 15 يومًا من تاريخ الإصدار.",stampLine:"العرض لا يشمل رسوم الختم الهندسي Engineering Stamp أو الاعتمادات الرسمية.",taxLine:"الأسعار لا تشمل VAT ما لم يذكر خلاف ذلك.",vatControlLabel:"Show VAT 14%",selectAll:"تحديد الكل",deselectAll:"إلغاء الكل",printBtn:"🖨️ طباعة PDF",proBtn:"لغة احترافية",noItems:"Warning: No active financial items selected.",items:{steelDesign:"خدمات التصميم والتحليل الإنشائي Structural Analysis",steelDetailing:"الرسومات التنفيذية والمخططات الورشية Shop Drawings",concreteDesign:"خدمات التصميم الإنشائي للعناصر الخرسانية Concrete Design"},scope:{steelDesignScope1:"حزمة التصميم الإنشائي الكاملة Structural Design Package.",steelDesignScope2:"المذكرة الحسابية وتقارير التصميم Design Reports.",detailScope1:"رسومات القطع والتجميع Single & Assembly Drawings.",detailScope2:"مخططات التركيب Erection Drawings.",detailScope3:"اللوحات العامة والمحاور GA Drawings.",detailScope4:"جداول المواد والكميات MTO.",detailScope5:"ملفات CNC وبيانات التصنيع الرقمية.",concreteScope1:"التصميم الإنشائي الكامل للعناصر الخرسانية.",concreteScope2:"المذكرة الحسابية وتقارير التصميم الإنشائي."}}
 };
 function nextLanguage(){return currentLang==="en"?"ar":"en";}
-function money(n){return (Number(n)||0).toLocaleString()+" EGP";}
+const CURRENCY_MAP={
+  EGP:{ar:"جنيه مصري",en:"EGP",pro:"EGP"},
+  SAR:{ar:"ريال سعودي",en:"SAR",pro:"SAR"},
+  USD:{ar:"دولار",en:"USD",pro:"USD"},
+  AED:{ar:"درهم",en:"AED",pro:"AED"},
+  SYP:{ar:"ليرة",en:"SYP",pro:"SYP"}
+};
+function getCurrency(){
+  const sel=document.getElementById("currencySelect");
+  return sel ? sel.value : "EGP";
+}
+function currencyLabel(){
+  const code=getCurrency();
+  const item=CURRENCY_MAP[code] || CURRENCY_MAP.EGP;
+  return item[currentLang] || item.en;
+}
+function money(n){
+  return (Number(n)||0).toLocaleString()+" "+currencyLabel();
+}
 function setText(id,val){const el=document.getElementById(id);if(el)el.innerText=val;}
 function setLanguage(lang){
   currentLang=lang;document.documentElement.lang=lang==="en"?"en":"ar";document.documentElement.dir=lang==="en"?"ltr":"rtl";const t=T[lang];
@@ -808,6 +928,12 @@ function renderTerms(){
 }
 
 
+
+/* Rev09 currency labels */
+T.ar.currencyLabel = "العملة";
+T.en.currencyLabel = "Currency";
+T.pro.currencyLabel = "العملة";
+
 /* Rev04 Included / Excluded proposal options patch */
 T.ar.proposalOptionsTitle = "خيارات العرض";
 T.ar.includeStampLabel = "يشمل الختم الهندسي";
@@ -885,7 +1011,7 @@ renderTerms = function(){
   oldRenderTermsRev04();
   const t=T[currentLang];
 
-  setText("proposalOptionsTitle",t.proposalOptionsTitle);
+  setText("currencyLabel",t.currencyLabel || "Currency");setText("proposalOptionsTitle",t.proposalOptionsTitle);
   setText("includeStampLabel",t.includeStampLabel);
   setText("includeVatLabel",t.includeVatLabel);
   setText("includedHeading",t.includedHeading);
@@ -914,6 +1040,15 @@ document.addEventListener("input", function(e){
 window.addEventListener("beforeprint", syncFooterContact);
 
 window.onload=()=>{setLanguage("ar");syncFooterContact();};
+</script>
+
+<script>
+// RONIX PWA registration - keeps the app available from Home Screen
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){ console.log('SW registration failed', err); });
+  });
+}
 </script>
 </body>
 </html>
