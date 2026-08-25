@@ -1,0 +1,58 @@
+{
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "autoname": "format:CON-{YYYY}-{#####}",
+  "is_submittable": 1,
+  "allow_rename": 0,
+  "field_order": [
+    "title", "contract_status", "company", "customer", "quotation", "project",
+    "commercial_section", "contract_date", "start_date", "end_date", "currency", "exchange_rate", "contract_value",
+    "items_section", "items", "schedule_section", "payment_schedule",
+    "scope_section", "scope", "terms", "approval_section", "technical_approved", "finance_approved", "management_approved", "signed_by_customer", "signed_by_company", "amended_from"
+  ],
+  "fields": [
+    {"fieldname": "title", "fieldtype": "Data", "label": "Contract Title", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "contract_status", "fieldtype": "Select", "label": "Contract Status", "options": "Draft\nInternal Review\nApproved\nSigned\nActive\nClosed\nCancelled", "default": "Draft", "reqd": 1, "in_list_view": 1, "allow_on_submit": 1},
+    {"fieldname": "company", "fieldtype": "Link", "label": "Company", "options": "Company", "reqd": 1},
+    {"fieldname": "customer", "fieldtype": "Link", "label": "Customer", "options": "Customer", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "quotation", "fieldtype": "Link", "label": "Quotation", "options": "Quotation", "reqd": 1, "unique": 1},
+    {"fieldname": "project", "fieldtype": "Link", "label": "Project", "options": "Project", "read_only": 1, "no_copy": 1, "allow_on_submit": 1},
+    {"fieldname": "commercial_section", "fieldtype": "Section Break", "label": "Commercial Details"},
+    {"fieldname": "contract_date", "fieldtype": "Date", "label": "Contract Date", "reqd": 1},
+    {"fieldname": "start_date", "fieldtype": "Date", "label": "Start Date"},
+    {"fieldname": "end_date", "fieldtype": "Date", "label": "End Date"},
+    {"fieldname": "currency", "fieldtype": "Link", "label": "Currency", "options": "Currency", "reqd": 1},
+    {"fieldname": "exchange_rate", "fieldtype": "Float", "label": "Exchange Rate", "default": "1", "reqd": 1},
+    {"fieldname": "contract_value", "fieldtype": "Currency", "label": "Contract Value", "read_only": 1, "options": "currency", "in_list_view": 1},
+    {"fieldname": "items_section", "fieldtype": "Section Break", "label": "Contract Items"},
+    {"fieldname": "items", "fieldtype": "Table", "label": "Items", "options": "RONIX Contract Item", "reqd": 1},
+    {"fieldname": "schedule_section", "fieldtype": "Section Break", "label": "Payment Schedule"},
+    {"fieldname": "payment_schedule", "fieldtype": "Table", "label": "Payment Schedule", "options": "RONIX Contract Milestone"},
+    {"fieldname": "scope_section", "fieldtype": "Section Break", "label": "Scope and Terms"},
+    {"fieldname": "scope", "fieldtype": "Text Editor", "label": "Scope of Work", "reqd": 1},
+    {"fieldname": "terms", "fieldtype": "Text Editor", "label": "Terms and Conditions"},
+    {"fieldname": "approval_section", "fieldtype": "Section Break", "label": "Approval Gates"},
+    {"fieldname": "technical_approved", "fieldtype": "Check", "label": "Technical Approved", "default": "0"},
+    {"fieldname": "finance_approved", "fieldtype": "Check", "label": "Finance Approved", "default": "0"},
+    {"fieldname": "management_approved", "fieldtype": "Check", "label": "Management Approved", "default": "0"},
+    {"fieldname": "signed_by_customer", "fieldtype": "Data", "label": "Signed by Customer"},
+    {"fieldname": "signed_by_company", "fieldtype": "Data", "label": "Signed by Company"},
+    {"fieldname": "amended_from", "fieldtype": "Link", "label": "Amended From", "options": "RONIX Contract", "read_only": 1, "no_copy": 1, "print_hide": 1}
+  ],
+  "links": [
+    {"link_doctype": "Project", "link_fieldname": "ronix_contract"},
+    {"link_doctype": "RONIX Claim", "link_fieldname": "contract"}
+  ],
+  "module": "RONIX ERP",
+  "name": "RONIX Contract",
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "print": 1, "email": 1, "export": 1},
+    {"role": "Sales Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1, "email": 1},
+    {"role": "Accounts Manager", "read": 1, "write": 1, "print": 1, "export": 1}
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "title_field": "title",
+  "track_changes": 1
+}
+

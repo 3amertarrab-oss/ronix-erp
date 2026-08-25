@@ -1,0 +1,29 @@
+app_name = "ronix_erp"
+app_title = "RONIX ERP"
+app_publisher = "Eng. Amer Tarrab - RONIX STEEL"
+app_description = "Controlled contracts, claims, projects, and commercial workflows for RONIX STEEL"
+app_email = "3amertarrab@gmail.com"
+app_license = "MIT"
+app_version = "0.1.0"
+
+required_apps = ["erpnext"]
+
+after_install = "ronix_erp.install.after_install"
+after_migrate = "ronix_erp.install.after_migrate"
+
+doctype_js = {
+    "Quotation": "public/js/quotation.js",
+}
+
+doc_events = {
+    "Quotation": {
+        "validate": "ronix_erp.events.quotation.validate_quotation",
+    },
+    "Project": {
+        "validate": "ronix_erp.events.project.validate_project",
+        "after_insert": "ronix_erp.events.project.after_insert_project",
+    },
+    "Sales Invoice": {
+        "validate": "ronix_erp.events.sales_invoice.validate_sales_invoice",
+    },
+}
