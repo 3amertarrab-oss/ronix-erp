@@ -2,7 +2,7 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.1.0
+## Scope of v0.2.0
 
 This first controlled release establishes the commercial data model:
 
@@ -16,6 +16,10 @@ Implemented in this release:
 - Quotation-to-contract and contract-to-project mapping APIs.
 - Validation for dates, cross-document ownership, duplicate conversion, milestone totals, and monetary calculations.
 - Arabic translation foundation.
+- Read-only legacy snapshot preview with structural, relationship, duplicate, and amount checks.
+- Idempotent Customer and Project migration using immutable legacy identifiers.
+- Dry-run is mandatory before the confirmed master-data import.
+- Immutable migration-run report for audit and reconciliation.
 
 Not implemented yet:
 
@@ -23,8 +27,22 @@ Not implemented yet:
 - Automatic claim-to-invoice submission.
 - Automatic inventory or manufacturing postings.
 - Migration of live balances.
+- Import of quotations, contracts, invoices, receipts, and expenses from the legacy snapshot.
 
 Those operations remain deliberately disabled until the end-to-end pilot is reconciled and approved.
+
+## Controlled legacy migration
+
+The v0.2 migration endpoint imports **master data only**. Financial documents remain blocked.
+Only a System Manager can run it, and the confirmed SHA-256 must match the previewed snapshot.
+Re-running the same import skips records by their immutable `ronix_legacy_id`.
+
+1. Call `ronix_erp.migration.legacy_snapshot.preview_legacy_snapshot`.
+2. Review all errors, warnings, counts, and control totals.
+3. Call `ronix_erp.migration.legacy_snapshot.import_legacy_master_data` with `dry_run=1`.
+4. Reconcile the plan, then repeat with `dry_run=0` and the preview hash.
+
+Never import financial documents before the staging reconciliation is signed off.
 
 ## Compatibility
 
@@ -44,4 +62,3 @@ bench --site your-site migrate
 ## Ownership
 
 Developed for RONIX STEEL - Eng. Amer Tarrab.
-

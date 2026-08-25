@@ -1,0 +1,33 @@
+{
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "autoname": "format:MIG-{YYYY}-{#####}",
+  "allow_rename": 0,
+  "field_order": [
+    "company", "snapshot_hash", "source_version", "run_status",
+    "counts_section", "imported_customers", "skipped_customers", "imported_projects", "skipped_projects", "warning_count",
+    "report_section", "report_json"
+  ],
+  "fields": [
+    {"fieldname": "company", "fieldtype": "Link", "label": "Company", "options": "Company", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "snapshot_hash", "fieldtype": "Data", "label": "Snapshot SHA-256", "reqd": 1, "unique": 1, "read_only": 1, "in_list_view": 1},
+    {"fieldname": "source_version", "fieldtype": "Data", "label": "Source Version", "read_only": 1},
+    {"fieldname": "run_status", "fieldtype": "Select", "label": "Run Status", "options": "Running\nCompleted\nFailed", "reqd": 1, "read_only": 1, "in_list_view": 1},
+    {"fieldname": "counts_section", "fieldtype": "Section Break", "label": "Import Counts"},
+    {"fieldname": "imported_customers", "fieldtype": "Int", "label": "Imported Customers", "read_only": 1},
+    {"fieldname": "skipped_customers", "fieldtype": "Int", "label": "Skipped Customers", "read_only": 1},
+    {"fieldname": "imported_projects", "fieldtype": "Int", "label": "Imported Projects", "read_only": 1},
+    {"fieldname": "skipped_projects", "fieldtype": "Int", "label": "Skipped Projects", "read_only": 1},
+    {"fieldname": "warning_count", "fieldtype": "Int", "label": "Warnings", "read_only": 1},
+    {"fieldname": "report_section", "fieldtype": "Section Break", "label": "Immutable Migration Report"},
+    {"fieldname": "report_json", "fieldtype": "Code", "label": "Report JSON", "options": "JSON", "read_only": 1}
+  ],
+  "module": "RONIX ERP",
+  "name": "RONIX Migration Run",
+  "permissions": [
+    {"role": "System Manager", "read": 1, "create": 1, "export": 1}
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

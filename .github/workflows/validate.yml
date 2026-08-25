@@ -23,7 +23,9 @@ jobs:
       - name: Validate Python, TOML, and DocType JSON
         run: python scripts/validate_app.py
 
+      - name: Run migration safety unit tests
+        run: python -m unittest discover -s tests -v
+
       - name: Validate JavaScript syntax
         run: |
           find ronix_erp -type f -name '*.js' -print0 | xargs -0 -r -n1 node --check
-

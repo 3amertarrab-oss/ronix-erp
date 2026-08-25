@@ -3,6 +3,33 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
 CUSTOM_FIELDS = {
+    "Customer": [
+        {
+            "fieldname": "ronix_legacy_section",
+            "label": "RONIX Migration Identity",
+            "fieldtype": "Section Break",
+            "insert_after": "disabled",
+            "hidden": 1,
+        },
+        {
+            "fieldname": "ronix_legacy_id",
+            "label": "RONIX Legacy ID",
+            "fieldtype": "Data",
+            "unique": 1,
+            "read_only": 1,
+            "no_copy": 1,
+            "hidden": 1,
+            "insert_after": "ronix_legacy_section",
+        },
+        {
+            "fieldname": "ronix_legacy_code",
+            "label": "RONIX Legacy Code",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "no_copy": 1,
+            "insert_after": "ronix_legacy_id",
+        },
+    ],
     "Quotation": [
         {
             "fieldname": "ronix_section",
@@ -75,6 +102,24 @@ CUSTOM_FIELDS = {
             "options": "Cost Center",
             "insert_after": "ronix_quotation",
         },
+        {
+            "fieldname": "ronix_legacy_id",
+            "label": "RONIX Legacy ID",
+            "fieldtype": "Data",
+            "unique": 1,
+            "read_only": 1,
+            "no_copy": 1,
+            "hidden": 1,
+            "insert_after": "ronix_cost_center",
+        },
+        {
+            "fieldname": "ronix_legacy_code",
+            "label": "RONIX Legacy Code",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "no_copy": 1,
+            "insert_after": "ronix_legacy_id",
+        },
     ],
     "Sales Invoice": [
         {
@@ -124,4 +169,3 @@ def after_migrate():
 def create_or_update_custom_fields():
     create_custom_fields(CUSTOM_FIELDS, update=True)
     frappe.clear_cache()
-
