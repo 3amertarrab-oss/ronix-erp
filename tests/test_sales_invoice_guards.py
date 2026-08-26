@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import types
 import unittest
+from datetime import date
 from pathlib import Path
 
 
@@ -64,6 +65,9 @@ class SalesInvoiceGuardTest(unittest.TestCase):
         )
         utils = types.ModuleType("frappe.utils")
         utils.flt = lambda value: float(value or 0)
+        utils.getdate = lambda value: (
+            value if isinstance(value, date) else date.fromisoformat(value)
+        )
 
         self.original_modules = {
             name: sys.modules.get(name) for name in ("frappe", "frappe.utils")
@@ -105,6 +109,10 @@ class SalesInvoiceGuardTest(unittest.TestCase):
         )
 
     def test_valid_mapped_invoice_passes(self):
+        self.events.validate_sales_invoice(self.make_invoice())
+
+    def test_same_due_date_with_different_runtime_types_passes(self):
+        self.claim.due_date = date(2026, 9, 25)
         self.events.validate_sales_invoice(self.make_invoice())
 
     def test_zero_item_invoice_is_blocked(self):
