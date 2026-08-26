@@ -35,6 +35,13 @@ class FakeDB:
     def exists(self, doctype, filters):
         return None
 
+    def get_value(self, doctype, name, fieldname):
+        if doctype == "Item" and fieldname == "stock_uom":
+            return "Job"
+        if doctype == "UOM" and fieldname == "must_be_whole_number":
+            return 1 if name == "Nos" else 0
+        return None
+
 
 class ClaimInvoiceMappingTest(unittest.TestCase):
     def setUp(self):
@@ -128,12 +135,18 @@ class ClaimInvoiceMappingTest(unittest.TestCase):
         self.assertEqual(len(invoice.items), 1)
         self.assertEqual(invoice.items[0].item_code, "RONIX-TEST-SERVICE")
         self.assertEqual(invoice.items[0].qty, 0.4)
+        self.assertEqual(invoice.items[0].uom, "Job")
         self.assertEqual(invoice.items[0].rate, 100000)
         self.assertEqual(invoice.items[0].ronix_claim_item, "CLAIM-ITEM-1")
         self.assertEqual(
             invoice.methods_run,
             ["set_missing_values", "calculate_taxes_and_totals"],
         )
+
+    def test_integer_quantity_keeps_source_uom(self):
+        self.claim.items[0].qty = 1
+        invoice = self.api.make_sales_invoice_from_claim("CLM-TEST")
+        self.assertEqual(invoice.items[0].uom, "Nos")
 
 
 if __name__ == "__main__":
