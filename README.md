@@ -2,7 +2,7 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.2.4
+## Scope of v0.2.5
 
 - Fractional service claims automatically use the item's fraction-safe stock UOM
   when legacy contract/claim rows still carry a whole-number UOM such as `Nos`.
