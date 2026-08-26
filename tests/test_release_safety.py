@@ -23,8 +23,8 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.2.4"', package_init)
-        self.assertIn('app_version = "0.2.4"', hooks)
+        self.assertIn('__version__ = "0.2.5"', package_init)
+        self.assertIn('app_version = "0.2.5"', hooks)
 
     def test_submitted_contract_can_capture_required_signatories(self):
         path = (
