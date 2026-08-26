@@ -2,7 +2,7 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.2.0
+## Scope of v0.2.1
 
 This first controlled release establishes the commercial data model:
 
@@ -15,6 +15,9 @@ Implemented in this release:
 - Safe links on Quotation, Project, and Sales Invoice.
 - Quotation-to-contract and contract-to-project mapping APIs.
 - Validation for dates, cross-document ownership, duplicate conversion, milestone totals, and monetary calculations.
+- Cumulative claim controls that prevent quantities or values from exceeding contract items.
+- Dependency checks that block cancellation of contracts or claims with downstream documents.
+- Controlled submitted-document status transitions and signatory requirements.
 - Arabic translation foundation.
 - Read-only legacy snapshot preview with structural, relationship, duplicate, and amount checks.
 - Idempotent Customer and Project migration using immutable legacy identifiers.

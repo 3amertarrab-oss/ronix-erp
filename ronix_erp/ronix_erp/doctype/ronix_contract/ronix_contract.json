@@ -47,7 +47,7 @@
   "name": "RONIX Contract",
   "permissions": [
     {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "print": 1, "email": 1, "export": 1},
-    {"role": "Sales Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1, "email": 1},
+    {"role": "Sales Manager", "read": 1, "write": 1, "create": 1, "print": 1, "email": 1},
     {"role": "Accounts Manager", "read": 1, "write": 1, "print": 1, "export": 1}
   ],
   "sort_field": "modified",
@@ -55,4 +55,3 @@
   "title_field": "title",
   "track_changes": 1
 }
-

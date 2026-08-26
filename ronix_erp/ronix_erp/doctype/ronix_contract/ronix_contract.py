@@ -8,8 +8,11 @@ class RONIXContract(Document):
     def validate(self):
         self.validate_source()
         self.validate_dates()
+        self.validate_exchange_rate()
         self.set_totals()
         self.validate_payment_schedule()
+        self.validate_signatories()
+        self.validate_status_transition()
 
     def before_submit(self):
         missing = []
@@ -23,6 +26,31 @@ class RONIXContract(Document):
             missing.append(_("Approved or Signed contract status"))
         if missing:
             frappe.throw(_("Contract cannot be submitted. Missing: {0}").format(", ".join(missing)))
+
+    def before_cancel(self):
+        project = self.project or frappe.db.exists("Project", {"ronix_contract": self.name})
+        if project:
+            frappe.throw(
+                _("Contract cannot be cancelled because it is linked to Project {0}.").format(project)
+            )
+
+        claim = frappe.db.exists(
+            "RONIX Claim", {"contract": self.name, "docstatus": ["<", 2]}
+        )
+        if claim:
+            frappe.throw(
+                _("Contract cannot be cancelled because Claim {0} depends on it.").format(claim)
+            )
+
+        invoice = frappe.db.exists(
+            "Sales Invoice", {"ronix_contract": self.name, "docstatus": ["<", 2]}
+        )
+        if invoice:
+            frappe.throw(
+                _("Contract cannot be cancelled because Sales Invoice {0} depends on it.").format(
+                    invoice
+                )
+            )
 
     def on_submit(self):
         frappe.db.set_value(
@@ -73,7 +101,41 @@ class RONIXContract(Document):
         if self.start_date and self.end_date and self.end_date < self.start_date:
             frappe.throw(_("Contract end date cannot be before the start date."))
 
+    def validate_exchange_rate(self):
+        if flt(self.exchange_rate) <= 0:
+            frappe.throw(_("Contract exchange rate must be greater than zero."))
+
+    def validate_signatories(self):
+        if self.contract_status in ("Signed", "Active"):
+            if not self.signed_by_customer or not self.signed_by_company:
+                frappe.throw(
+                    _("Signed or Active contracts require both customer and company signatories.")
+                )
+
+    def validate_status_transition(self):
+        previous = self.get_doc_before_save()
+        if not previous or previous.docstatus != 1 or self.docstatus != 1:
+            return
+
+        allowed = {
+            "Approved": {"Approved", "Signed"},
+            "Signed": {"Signed", "Active"},
+            "Active": {"Active", "Closed"},
+            "Closed": {"Closed"},
+        }
+        if self.contract_status == "Cancelled":
+            frappe.throw(_("Use the Cancel action instead of changing Contract Status manually."))
+        allowed_next = allowed.get(previous.contract_status, {previous.contract_status})
+        if self.contract_status not in allowed_next:
+            frappe.throw(
+                _("Invalid Contract Status transition from {0} to {1}.").format(
+                    previous.contract_status, self.contract_status
+                )
+            )
+
     def set_totals(self):
+        if not self.items:
+            frappe.throw(_("Contract must contain at least one item."))
         total = 0
         for row in self.items:
             if flt(row.qty) <= 0:
@@ -92,6 +154,14 @@ class RONIXContract(Document):
                 frappe.throw(_("Payment milestone percentage and amount cannot be negative."))
             if flt(row.percentage) and not flt(row.amount):
                 row.amount = flt(self.contract_value) * flt(row.percentage) / 100
+            elif flt(row.percentage) and flt(row.amount):
+                expected = flt(self.contract_value) * flt(row.percentage) / 100
+                if abs(flt(row.amount) - expected) > 0.01:
+                    frappe.throw(
+                        _("Payment milestone {0} amount does not match its percentage.").format(
+                            row.milestone
+                        )
+                    )
             percent_total += flt(row.percentage)
             amount_total += flt(row.amount)
 
@@ -99,3 +169,11 @@ class RONIXContract(Document):
             frappe.throw(_("Payment schedule percentages cannot exceed 100%."))
         if amount_total > flt(self.contract_value) + 0.01:
             frappe.throw(_("Payment schedule amount cannot exceed the contract value."))
+
+        if self.payment_schedule and self.docstatus == 1:
+            complete_by_percent = abs(percent_total - 100) <= 0.0001
+            complete_by_amount = abs(amount_total - flt(self.contract_value)) <= 0.01
+            if not (complete_by_percent or complete_by_amount):
+                frappe.throw(
+                    _("Submitted Contract payment schedule must cover the full contract value.")
+                )
