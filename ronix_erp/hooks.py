@@ -4,7 +4,7 @@ app_publisher = "Eng. Amer Tarrab - RONIX STEEL"
 app_description = "Controlled contracts, claims, projects, and commercial workflows for RONIX STEEL"
 app_email = "3amertarrab@gmail.com"
 app_license = "MIT"
-app_version = "0.2.3"
+app_version = "0.2.4"
 
 required_apps = ["erpnext"]
 
