@@ -17,6 +17,9 @@ def make_contract_from_quotation(source_name, target_doc=None):
     if existing:
         frappe.throw(_("Quotation {0} is already linked to Contract {1}.").format(source_name, existing))
 
+    def set_contract_item_values(source, target, source_parent):
+        target.description = source.description or source.item_name or source.item_code
+
     def set_missing_values(source, target):
         target.title = source.get("title") or source_name
         target.customer = source.party_name
@@ -44,6 +47,7 @@ def make_contract_from_quotation(source_name, target_doc=None):
             },
             "Quotation Item": {
                 "doctype": "RONIX Contract Item",
+                "postprocess": set_contract_item_values,
                 "field_map": {
                     "item_code": "item_code",
                     "item_name": "item_name",
