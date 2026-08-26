@@ -156,6 +156,9 @@ def make_sales_invoice_from_claim(source_name):
                     row.contract_item_reference or row.idx
                 )
             )
+        invoice_uom = _resolve_invoice_uom(
+            contract_item.item_code, row.uom, row.qty
+        )
         invoice.append(
             "items",
             {
@@ -163,7 +166,7 @@ def make_sales_invoice_from_claim(source_name):
                 "item_name": contract_item.item_name,
                 "description": row.description,
                 "qty": row.qty,
-                "uom": row.uom,
+                "uom": invoice_uom,
                 "rate": row.rate,
                 "amount": row.amount,
                 "project": claim.project,
@@ -175,3 +178,31 @@ def make_sales_invoice_from_claim(source_name):
     invoice.due_date = claim.due_date or claim.posting_date
     invoice.run_method("calculate_taxes_and_totals")
     return invoice
+
+
+def _resolve_invoice_uom(item_code, source_uom, qty):
+    """Use a fraction-safe UOM without changing the claimed quantity."""
+    if not _is_fractional(qty) or _uom_allows_fraction(source_uom):
+        return source_uom
+
+    stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
+    if stock_uom and _uom_allows_fraction(stock_uom):
+        return stock_uom
+
+    frappe.throw(
+        _(
+            "Item {0} uses UOM {1}, which does not allow fractional quantity {2}. "
+            "Assign the item a fraction-safe service UOM before invoicing."
+        ).format(item_code, source_uom, qty)
+    )
+
+
+def _is_fractional(value):
+    numeric_value = flt(value)
+    return abs(numeric_value - round(numeric_value)) > 1e-9
+
+
+def _uom_allows_fraction(uom):
+    if not uom:
+        return False
+    return not bool(frappe.db.get_value("UOM", uom, "must_be_whole_number"))
