@@ -4,7 +4,7 @@ app_publisher = "Eng. Amer Tarrab - RONIX STEEL"
 app_description = "Controlled contracts, claims, projects, and commercial workflows for RONIX STEEL"
 app_email = "3amertarrab@gmail.com"
 app_license = "MIT"
-app_version = "0.2.2"
+app_version = "0.2.3"
 
 required_apps = ["erpnext"]
 
@@ -25,5 +25,7 @@ doc_events = {
     },
     "Sales Invoice": {
         "validate": "ronix_erp.events.sales_invoice.validate_sales_invoice",
+        "on_submit": "ronix_erp.events.sales_invoice.on_submit_sales_invoice",
+        "on_cancel": "ronix_erp.events.sales_invoice.on_cancel_sales_invoice",
     },
 }

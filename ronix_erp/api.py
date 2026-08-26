@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
+from frappe.utils import flt
 
 
 @frappe.whitelist()
@@ -110,3 +111,67 @@ def make_claim_from_contract(source_name):
         )
     claim.run_method("set_totals")
     return claim
+
+
+@frappe.whitelist()
+def make_sales_invoice_from_claim(source_name):
+    claim = frappe.get_doc("RONIX Claim", source_name)
+    if claim.docstatus != 1 or claim.claim_status != "Approved":
+        frappe.throw(_("Only a submitted Approved Claim can create a Sales Invoice."))
+
+    frappe.db.sql(
+        "SELECT name FROM `tabRONIX Claim` WHERE name = %s FOR UPDATE",
+        (claim.name,),
+    )
+    existing = frappe.db.exists(
+        "Sales Invoice", {"ronix_claim": claim.name, "docstatus": ["<", 2]}
+    )
+    if existing:
+        frappe.throw(
+            _("Claim {0} is already linked to Sales Invoice {1}.").format(
+                claim.name, existing
+            )
+        )
+
+    contract = frappe.get_doc("RONIX Contract", claim.contract)
+    contract_items = {row.name: row for row in contract.items}
+
+    invoice = frappe.new_doc("Sales Invoice")
+    invoice.company = claim.company
+    invoice.customer = claim.customer
+    invoice.posting_date = claim.posting_date
+    invoice.due_date = claim.due_date or claim.posting_date
+    invoice.currency = claim.currency
+    invoice.conversion_rate = flt(contract.exchange_rate) or 1
+    invoice.project = claim.project
+    invoice.ronix_claim = claim.name
+    invoice.ronix_contract = claim.contract
+    invoice.ronix_payment_milestone = claim.payment_milestone
+
+    for row in claim.items:
+        contract_item = contract_items.get(row.contract_item_reference)
+        if not contract_item or not contract_item.item_code:
+            frappe.throw(
+                _("Contract item {0} requires an Item Code before invoicing.").format(
+                    row.contract_item_reference or row.idx
+                )
+            )
+        invoice.append(
+            "items",
+            {
+                "item_code": contract_item.item_code,
+                "item_name": contract_item.item_name,
+                "description": row.description,
+                "qty": row.qty,
+                "uom": row.uom,
+                "rate": row.rate,
+                "amount": row.amount,
+                "project": claim.project,
+                "ronix_claim_item": row.name,
+            },
+        )
+
+    invoice.run_method("set_missing_values")
+    invoice.due_date = claim.due_date or claim.posting_date
+    invoice.run_method("calculate_taxes_and_totals")
+    return invoice

@@ -2,7 +2,7 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.2.2
+## Scope of v0.2.3
 
 This first controlled release establishes the commercial data model:
 
@@ -20,6 +20,11 @@ Implemented in this release:
 - Controlled submitted-document status transitions and signatory requirements.
 - Submitted approved contracts can capture both signatories before moving to Signed.
 - Contract-item descriptions fall back to the quotation item name or code when blank.
+- Submitted approved claims create controlled draft Sales Invoices with matching customer,
+  company, currency, project, contract, due date, item codes, quantities, and rates.
+- Claim-to-invoice duplicate, missing-item, altered-item, and altered-total guards.
+- Submitting or cancelling the linked invoice updates the claim link and workflow state.
+- Claim totals refresh immediately in the form when quantities, rates, or percentages change.
 - Arabic translation foundation.
 - Read-only legacy snapshot preview with structural, relationship, duplicate, and amount checks.
 - Idempotent Customer and Project migration using immutable legacy identifiers.

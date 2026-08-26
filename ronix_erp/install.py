@@ -155,6 +155,17 @@ CUSTOM_FIELDS = {
             "insert_after": "ronix_contract",
         },
     ],
+    "Sales Invoice Item": [
+        {
+            "fieldname": "ronix_claim_item",
+            "label": "RONIX Claim Item",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "no_copy": 1,
+            "hidden": 1,
+            "insert_after": "sales_order_item",
+        },
+    ],
 }
 
 
