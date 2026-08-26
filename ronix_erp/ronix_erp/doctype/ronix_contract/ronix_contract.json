@@ -35,8 +35,8 @@
     {"fieldname": "technical_approved", "fieldtype": "Check", "label": "Technical Approved", "default": "0"},
     {"fieldname": "finance_approved", "fieldtype": "Check", "label": "Finance Approved", "default": "0"},
     {"fieldname": "management_approved", "fieldtype": "Check", "label": "Management Approved", "default": "0"},
-    {"fieldname": "signed_by_customer", "fieldtype": "Data", "label": "Signed by Customer"},
-    {"fieldname": "signed_by_company", "fieldtype": "Data", "label": "Signed by Company"},
+    {"fieldname": "signed_by_customer", "fieldtype": "Data", "label": "Signed by Customer", "allow_on_submit": 1},
+    {"fieldname": "signed_by_company", "fieldtype": "Data", "label": "Signed by Company", "allow_on_submit": 1},
     {"fieldname": "amended_from", "fieldtype": "Link", "label": "Amended From", "options": "RONIX Contract", "read_only": 1, "no_copy": 1, "print_hide": 1}
   ],
   "links": [
