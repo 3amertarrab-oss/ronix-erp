@@ -2,7 +2,7 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.2.1
+## Scope of v0.2.2
 
 This first controlled release establishes the commercial data model:
 
@@ -18,6 +18,8 @@ Implemented in this release:
 - Cumulative claim controls that prevent quantities or values from exceeding contract items.
 - Dependency checks that block cancellation of contracts or claims with downstream documents.
 - Controlled submitted-document status transitions and signatory requirements.
+- Submitted approved contracts can capture both signatories before moving to Signed.
+- Contract-item descriptions fall back to the quotation item name or code when blank.
 - Arabic translation foundation.
 - Read-only legacy snapshot preview with structural, relationship, duplicate, and amount checks.
 - Idempotent Customer and Project migration using immutable legacy identifiers.
