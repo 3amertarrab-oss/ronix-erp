@@ -23,8 +23,31 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.2.1"', package_init)
-        self.assertIn('app_version = "0.2.1"', hooks)
+        self.assertIn('__version__ = "0.2.2"', package_init)
+        self.assertIn('app_version = "0.2.2"', hooks)
+
+    def test_submitted_contract_can_capture_required_signatories(self):
+        path = (
+            ROOT
+            / "ronix_erp"
+            / "ronix_erp"
+            / "doctype"
+            / "ronix_contract"
+            / "ronix_contract.json"
+        )
+        data = json.loads(path.read_text(encoding="utf-8"))
+        fields = {row["fieldname"]: row for row in data["fields"]}
+        self.assertEqual(fields["contract_status"].get("allow_on_submit"), 1)
+        self.assertEqual(fields["signed_by_customer"].get("allow_on_submit"), 1)
+        self.assertEqual(fields["signed_by_company"].get("allow_on_submit"), 1)
+
+    def test_contract_item_mapping_has_description_fallback(self):
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+        self.assertIn("def set_contract_item_values", api)
+        self.assertIn(
+            "source.description or source.item_name or source.item_code",
+            api,
+        )
 
     def test_dependency_and_cumulative_guards_are_present(self):
         contract = (
