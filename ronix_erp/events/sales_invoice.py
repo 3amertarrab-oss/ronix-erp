@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt, getdate
 
 
 def validate_sales_invoice(doc, method=None):
@@ -46,7 +46,9 @@ def validate_sales_invoice(doc, method=None):
         frappe.throw(_("Sales Invoice project must match the RONIX Claim project."))
     if doc.get("ronix_contract") != claim.contract:
         frappe.throw(_("Sales Invoice contract must match the RONIX Claim contract."))
-    if claim.due_date and doc.due_date != claim.due_date:
+    if claim.due_date and (
+        not doc.due_date or getdate(doc.due_date) != getdate(claim.due_date)
+    ):
         frappe.throw(_("Sales Invoice due date must match the RONIX Claim due date."))
 
     duplicate = frappe.db.exists(
