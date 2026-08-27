@@ -23,8 +23,24 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.3.0"', package_init)
-        self.assertIn('app_version = "0.3.0"', hooks)
+        self.assertIn('__version__ = "0.4.0"', package_init)
+        self.assertIn('app_version = "0.4.0"', hooks)
+
+    def test_profitability_report_is_read_only_and_project_scoped(self):
+        report = (
+            ROOT
+            / "ronix_erp"
+            / "ronix_erp"
+            / "report"
+            / "ronix_project_profitability"
+            / "ronix_project_profitability.py"
+        ).read_text(encoding="utf-8")
+        hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
+
+        self.assertIn("enrich_project_rows", report)
+        self.assertIn("allowed_projects", report)
+        self.assertNotIn("frappe.db.set_value", report)
+        self.assertIn('"Project": "public/js/project.js"', hooks)
 
     def test_submitted_contract_can_capture_required_signatories(self):
         path = (

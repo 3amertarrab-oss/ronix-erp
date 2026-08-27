@@ -4,7 +4,7 @@ app_publisher = "Eng. Amer Tarrab - RONIX STEEL"
 app_description = "Controlled contracts, claims, projects, and commercial workflows for RONIX STEEL"
 app_email = "3amertarrab@gmail.com"
 app_license = "MIT"
-app_version = "0.3.0"
+app_version = "0.4.0"
 
 required_apps = ["erpnext"]
 
@@ -13,6 +13,7 @@ after_migrate = "ronix_erp.install.after_migrate"
 
 doctype_js = {
     "Quotation": "public/js/quotation.js",
+    "Project": "public/js/project.js",
     "Sales Invoice": "public/js/sales_invoice.js",
 }
 
