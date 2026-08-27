@@ -3,6 +3,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
+from ronix_erp.commercial import sync_contract_commercials
+
 
 class RONIXClaim(Document):
     def validate(self):
@@ -29,11 +31,28 @@ class RONIXClaim(Document):
                 )
             )
 
+    def on_submit(self):
+        sync_contract_commercials(self.contract)
+
+    def on_cancel(self):
+        sync_contract_commercials(self.contract)
+
+    def on_update_after_submit(self):
+        sync_contract_commercials(self.contract)
+
     def validate_contract(self):
         contract = frappe.db.get_value(
             "RONIX Contract",
             self.contract,
-            ["customer", "company", "project", "currency", "docstatus", "contract_status"],
+            [
+                "customer",
+                "company",
+                "project",
+                "currency",
+                "docstatus",
+                "contract_status",
+                "retention_percent",
+            ],
             as_dict=True,
         )
         if not contract or contract.docstatus != 1:
@@ -43,8 +62,29 @@ class RONIXClaim(Document):
         for fieldname in ("customer", "company", "currency"):
             if self.get(fieldname) != contract.get(fieldname):
                 frappe.throw(_("Claim {0} must match the Contract.").format(fieldname))
-        if self.project and contract.project and self.project != contract.project:
+        if not contract.project:
+            frappe.throw(_("The Contract must be linked to a Project before creating Claims."))
+        if self.project != contract.project:
             frappe.throw(_("Claim project must match the Contract project."))
+        if abs(flt(self.retention_percent) - flt(contract.retention_percent)) > 0.0001:
+            frappe.throw(_("Claim Retention % must match the Contract retention policy."))
+        self.validate_payment_milestone()
+
+    def validate_payment_milestone(self):
+        milestones = frappe.get_all(
+            "RONIX Contract Milestone",
+            filters={"parent": self.contract, "parenttype": "RONIX Contract"},
+            pluck="milestone",
+            order_by="idx asc",
+        )
+        if len(milestones) == 1 and not self.payment_milestone:
+            self.payment_milestone = milestones[0]
+        if len(milestones) > 1 and not self.payment_milestone:
+            frappe.throw(_("Select a Contract Payment Milestone for this Claim."))
+        if self.payment_milestone and self.payment_milestone not in milestones:
+            frappe.throw(
+                _("Payment Milestone must belong to Contract {0}.").format(self.contract)
+            )
 
     def validate_dates(self):
         if self.posting_date and self.due_date and self.due_date < self.posting_date:

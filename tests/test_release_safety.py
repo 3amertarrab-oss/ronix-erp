@@ -2,7 +2,6 @@ import json
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -23,8 +22,55 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.4.0"', package_init)
-        self.assertIn('app_version = "0.4.0"', hooks)
+        self.assertIn('__version__ = "0.5.0"', package_init)
+        self.assertIn('app_version = "0.5.0"', hooks)
+
+    def test_contract_exposes_live_balances_and_retention_policy(self):
+        path = (
+            ROOT
+            / "ronix_erp"
+            / "ronix_erp"
+            / "doctype"
+            / "ronix_contract"
+            / "ronix_contract.json"
+        )
+        data = json.loads(path.read_text(encoding="utf-8"))
+        fields = {row["fieldname"]: row for row in data["fields"]}
+
+        for fieldname in (
+            "retention_percent",
+            "retention_release_date",
+            "claimed_amount",
+            "invoiced_amount",
+            "collected_amount",
+            "retention_held",
+            "remaining_contract_value",
+        ):
+            self.assertIn(fieldname, fields)
+        self.assertEqual(fields["claimed_amount"].get("read_only"), 1)
+
+    def test_quotation_dashboard_exposes_reverse_links(self):
+        quotation_js = (ROOT / "ronix_erp" / "public" / "js" / "quotation.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("frm.dashboard.add_transactions", quotation_js)
+        self.assertIn('items: ["RONIX Contract", "Project"]', quotation_js)
+        self.assertIn("Open RONIX Contract", quotation_js)
+
+    def test_project_cost_center_is_required_for_postings(self):
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+        project = (ROOT / "ronix_erp" / "events" / "project.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("def ensure_project_cost_center", project)
+        self.assertIn('"cost_center": project_cost_center', api)
+        self.assertNotIn('or frappe.get_cached_value("Company", claim.company, "cost_center")', api)
+
+    def test_whitelisted_mappers_require_permissions(self):
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+        self.assertGreaterEqual(api.count("_require_permissions("), 5)
+        self.assertIn('source_doc.check_permission("read")', api)
 
     def test_profitability_report_is_read_only_and_project_scoped(self):
         report = (

@@ -4,7 +4,6 @@ import types
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -36,6 +35,8 @@ class FakeDB:
         return None
 
     def get_value(self, doctype, name, fieldname):
+        if doctype == "Project" and fieldname == "ronix_cost_center":
+            return "Main - RS"
         if doctype == "Item" and fieldname == "stock_uom":
             return "Job"
         if doctype == "UOM" and fieldname == "must_be_whole_number":
@@ -72,6 +73,7 @@ class ClaimInvoiceMappingTest(unittest.TestCase):
                 )
             ],
         )
+        self.claim.check_permission = lambda permission: None
         self.contract = types.SimpleNamespace(
             exchange_rate=1,
             items=[
@@ -92,6 +94,7 @@ class ClaimInvoiceMappingTest(unittest.TestCase):
             self.claim if doctype == "RONIX Claim" else self.contract
         )
         frappe.throw = lambda message: (_ for _ in ()).throw(ValueError(message))
+        frappe.has_permission = lambda doctype, ptype=None: True
 
         mapper = types.ModuleType("frappe.model.mapper")
         mapper.get_mapped_doc = object()
@@ -137,6 +140,7 @@ class ClaimInvoiceMappingTest(unittest.TestCase):
         self.assertEqual(invoice.items[0].qty, 0.4)
         self.assertEqual(invoice.items[0].uom, "Job")
         self.assertEqual(invoice.items[0].rate, 100000)
+        self.assertEqual(invoice.items[0].cost_center, "Main - RS")
         self.assertEqual(invoice.items[0].ronix_claim_item, "CLAIM-ITEM-1")
         self.assertEqual(
             invoice.methods_run,

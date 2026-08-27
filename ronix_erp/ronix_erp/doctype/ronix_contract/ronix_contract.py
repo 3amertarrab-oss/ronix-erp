@@ -3,12 +3,15 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
+from ronix_erp.commercial import sync_contract_commercials
+
 
 class RONIXContract(Document):
     def validate(self):
         self.validate_source()
         self.validate_dates()
         self.validate_exchange_rate()
+        self.validate_retention_policy()
         self.set_totals()
         self.validate_payment_schedule()
         self.validate_signatories()
@@ -31,7 +34,9 @@ class RONIXContract(Document):
         project = self.project or frappe.db.exists("Project", {"ronix_contract": self.name})
         if project:
             frappe.throw(
-                _("Contract cannot be cancelled because it is linked to Project {0}.").format(project)
+                _("Contract cannot be cancelled because it is linked to Project {0}.").format(
+                    project
+                )
             )
 
         claim = frappe.db.exists(
@@ -56,8 +61,25 @@ class RONIXContract(Document):
         frappe.db.set_value(
             "Quotation",
             self.quotation,
-            {"ronix_contract": self.name, "ronix_approved_for_contract": 1},
+            {
+                "ronix_contract": self.name,
+                "ronix_approved_for_contract": 1,
+                "ronix_commercial_status": "Contracted",
+            },
         )
+        sync_contract_commercials(self.name)
+
+    def on_update_after_submit(self):
+        status = "Closed" if self.contract_status == "Closed" else "Contracted"
+        if self.project and self.contract_status in ("Active", "Closed"):
+            status = "Closed" if self.contract_status == "Closed" else "Project Active"
+        frappe.db.set_value(
+            "Quotation",
+            self.quotation,
+            {"ronix_contract": self.name, "ronix_commercial_status": status},
+            update_modified=False,
+        )
+        sync_contract_commercials(self.name)
 
     def on_cancel(self):
         linked = frappe.db.get_value("Quotation", self.quotation, "ronix_contract")
@@ -65,8 +87,13 @@ class RONIXContract(Document):
             frappe.db.set_value(
                 "Quotation",
                 self.quotation,
-                {"ronix_contract": None, "ronix_approved_for_contract": 0},
+                {
+                    "ronix_contract": None,
+                    "ronix_approved_for_contract": 0,
+                    "ronix_commercial_status": "Open",
+                },
             )
+        sync_contract_commercials(self.name)
 
     def validate_source(self):
         if not self.quotation:
@@ -104,6 +131,26 @@ class RONIXContract(Document):
     def validate_exchange_rate(self):
         if flt(self.exchange_rate) <= 0:
             frappe.throw(_("Contract exchange rate must be greater than zero."))
+
+    def validate_retention_policy(self):
+        retention_percent = flt(self.retention_percent)
+        if retention_percent < 0 or retention_percent > 100:
+            frappe.throw(_("Contract Retention % must be between 0 and 100."))
+        if (
+            self.retention_release_date
+            and self.contract_date
+            and self.retention_release_date < self.contract_date
+        ):
+            frappe.throw(_("Retention release date cannot be before the Contract date."))
+        if retention_percent and not (
+            self.retention_release_date or (self.retention_terms or "").strip()
+        ):
+            frappe.throw(
+                _(
+                    "A contract with retention requires a Retention Release Date "
+                    "or Retention Release Terms."
+                )
+            )
 
     def validate_signatories(self):
         if self.contract_status in ("Signed", "Active"):

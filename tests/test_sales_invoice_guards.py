@@ -5,7 +5,6 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -23,6 +22,8 @@ class FakeDB:
         return []
 
     def get_value(self, doctype, name, fields, as_dict=False):
+        if doctype == "Project" and fields == "ronix_cost_center":
+            return "PROJ-0001 - RS"
         return self.claim
 
     def exists(self, doctype, filters):
@@ -103,6 +104,8 @@ class SalesInvoiceGuardTest(unittest.TestCase):
                     item_code="RONIX-TEST-SERVICE",
                     qty=0.4,
                     rate=100000,
+                    project="PROJ-0001",
+                    cost_center="PROJ-0001 - RS",
                     ronix_claim_item="CLAIM-ITEM-1",
                 )
             ],

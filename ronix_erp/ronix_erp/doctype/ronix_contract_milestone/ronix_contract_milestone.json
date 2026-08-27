@@ -2,7 +2,7 @@
   "doctype": "DocType",
   "editable_grid": 1,
   "engine": "InnoDB",
-  "field_order": ["milestone", "trigger", "percentage", "amount", "due_date", "invoiced_amount", "collected_amount", "status"],
+  "field_order": ["milestone", "trigger", "percentage", "amount", "due_date", "invoiced_amount", "collected_amount", "retention_amount", "withholding_amount", "status"],
   "fields": [
     {"fieldname": "milestone", "fieldtype": "Data", "label": "Milestone", "reqd": 1, "in_list_view": 1},
     {"fieldname": "trigger", "fieldtype": "Small Text", "label": "Payment Trigger"},
@@ -11,11 +11,12 @@
     {"fieldname": "due_date", "fieldtype": "Date", "label": "Due Date", "in_list_view": 1},
     {"fieldname": "invoiced_amount", "fieldtype": "Currency", "label": "Invoiced Amount", "read_only": 1},
     {"fieldname": "collected_amount", "fieldtype": "Currency", "label": "Collected Amount", "read_only": 1},
-    {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Planned\nDue\nInvoiced\nPartially Collected\nCollected", "default": "Planned", "read_only": 1, "in_list_view": 1}
+    {"fieldname": "retention_amount", "fieldtype": "Currency", "label": "Retention Held", "read_only": 1},
+    {"fieldname": "withholding_amount", "fieldtype": "Currency", "label": "Withholding Held", "read_only": 1},
+    {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Planned\nDue\nInvoiced\nPartially Collected\nCollected with Retention\nCollected", "default": "Planned", "read_only": 1, "in_list_view": 1}
   ],
   "istable": 1,
   "module": "RONIX ERP",
   "name": "RONIX Contract Milestone",
   "permissions": []
 }
-

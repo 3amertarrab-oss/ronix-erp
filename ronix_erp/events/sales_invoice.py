@@ -46,6 +46,11 @@ def validate_sales_invoice(doc, method=None):
         frappe.throw(_("Sales Invoice currency must match the RONIX Claim currency."))
     if doc.project != claim.project:
         frappe.throw(_("Sales Invoice project must match the RONIX Claim project."))
+    project_cost_center = frappe.db.get_value(
+        "Project", claim.project, "ronix_cost_center"
+    )
+    if not project_cost_center:
+        frappe.throw(_("RONIX Project requires a Project Cost Center before invoicing."))
     if doc.get("ronix_contract") != claim.contract:
         frappe.throw(_("Sales Invoice contract must match the RONIX Claim contract."))
     if claim.due_date and (
@@ -93,6 +98,10 @@ def validate_sales_invoice(doc, method=None):
             frappe.throw(_("Sales Invoice item quantity must match its Claim item."))
         if abs(flt(row.rate) - flt(source.rate)) > 0.0001:
             frappe.throw(_("Sales Invoice item rate must match its Claim item."))
+        if row.project != claim.project:
+            frappe.throw(_("Every Sales Invoice item must use the Claim Project."))
+        if row.cost_center != project_cost_center:
+            frappe.throw(_("Every Sales Invoice item must use the Project Cost Center."))
         seen.add(source_name)
     if seen != set(expected_by_name):
         frappe.throw(_("Sales Invoice must include every item from the RONIX Claim."))
@@ -111,6 +120,9 @@ def on_submit_sales_invoice(doc, method=None):
         {"sales_invoice": doc.name, "claim_status": "Invoiced"},
         update_modified=True,
     )
+    from ronix_erp.commercial import sync_contract_commercials
+
+    sync_contract_commercials(doc.get("ronix_contract"))
 
 
 def before_submit_sales_invoice(doc, method=None):
@@ -140,3 +152,6 @@ def on_cancel_sales_invoice(doc, method=None):
             {"sales_invoice": None, "claim_status": "Approved"},
             update_modified=True,
         )
+    from ronix_erp.commercial import sync_contract_commercials
+
+    sync_contract_commercials(doc.get("ronix_contract"))

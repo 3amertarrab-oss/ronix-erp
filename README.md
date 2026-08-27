@@ -2,7 +2,27 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.3.0
+## Scope of v0.5.0
+
+Version 0.5.0 is the first staging-hardening release based on the live Frappe Cloud
+reconciliation of quotation `SAL-QTN-2026-00001`, contract `CON-2026-00001`, claim
+`CLM-2026-00002`, invoice `ACC-SINV-2026-00001`, and payment
+`ACC-PAY-2026-00001`.
+
+- Quotation forms expose reverse links to the RONIX Contract and Project, plus a
+  separate RONIX commercial status that does not falsify ERPNext's standard status.
+- Duplicate active contracts for the same quotation remain blocked in both mapping
+  and document validation.
+- Every RONIX Project receives a dedicated Cost Center. Claim invoices and retention /
+  withholding adjustments must use it; the company default is no longer a fallback.
+- Contracts show event-driven live balances for claimed, invoiced, cash-collected,
+  retained, withheld, outstanding, and remaining values.
+- Payment milestones reconcile to submitted claims, invoices, and payments instead of
+  remaining `Planned` after downstream activity.
+- Retention policy is captured on the contract and copied to new claims.
+- Whitelisted document mappers enforce read and create permissions server-side.
+
+The controlled-retention foundation from v0.3.0 remains in force:
 
 - Fractional service claims automatically use the item's fraction-safe stock UOM
   when legacy contract/claim rows still carry a whole-number UOM such as `Nos`.
@@ -15,7 +35,7 @@ Production-oriented ERPNext extensions for **RONIX STEEL**.
   wrong customers, and unrelated invoices.
 - Payment Entries are never inserted or submitted automatically.
 
-This first controlled release establishes the commercial data model:
+The controlled commercial data model is:
 
 `Customer -> Quotation -> RONIX Contract -> Project -> RONIX Claim -> Sales Invoice -> Payment Entry`
 
@@ -23,7 +43,7 @@ Implemented in this release:
 
 - RONIX Contract with contractual items, approval gates, and payment milestones.
 - RONIX Claim with claim items, retention, withholding, tax, and calculated totals.
-- Safe links on Quotation, Project, and Sales Invoice.
+- Safe bidirectional navigation on Quotation, Contract, Project, and Sales Invoice.
 - Quotation-to-contract and contract-to-project mapping APIs.
 - Validation for dates, cross-document ownership, duplicate conversion, milestone totals, and monetary calculations.
 - Cumulative claim controls that prevent quantities or values from exceeding contract items.
@@ -42,9 +62,10 @@ Implemented in this release:
 - Dry-run is mandatory before the confirmed master-data import.
 - Immutable migration-run report for audit and reconciliation.
 
-Not implemented yet:
+Not implemented yet / still release-blocking:
 
-- Automatic submission or posting to the General Ledger.
+- Automatic submission of accounting documents. Submitted ERPNext documents post to
+  the General Ledger through ERPNext's standard controlled posting flow.
 - Automatic claim-to-invoice submission.
 - Automatic inventory or manufacturing postings.
 - Migration of live balances.

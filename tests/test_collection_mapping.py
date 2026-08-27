@@ -4,7 +4,6 @@ import types
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -18,6 +17,7 @@ class FakePayment(Record):
         super().__init__(deductions=[], references=[])
         self.exchange_rate_source = None
         self.amounts_set = False
+        self.meta = Record(has_field=lambda fieldname: fieldname == "cost_center")
 
     def set(self, fieldname, value):
         setattr(self, fieldname, value)
@@ -59,6 +59,7 @@ class CollectionMappingTest(unittest.TestCase):
             currency="EGP",
             outstanding_amount=40000,
         )
+        self.invoice.check_permission = lambda permission: None
         self.claim = Record(
             name="CLM-TEST",
             docstatus=1,
@@ -77,6 +78,7 @@ class CollectionMappingTest(unittest.TestCase):
         frappe._ = lambda value: value
         frappe.whitelist = lambda: (lambda function: function)
         frappe.throw = lambda message: (_ for _ in ()).throw(ValueError(message))
+        frappe.has_permission = lambda doctype, ptype=None: True
         frappe.get_doc = lambda doctype, name: (
             self.invoice if doctype == "Sales Invoice" else self.claim
         )

@@ -1,7 +1,6 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-
 CUSTOM_FIELDS = {
     "Customer": [
         {
@@ -68,6 +67,16 @@ CUSTOM_FIELDS = {
             "read_only": 1,
             "no_copy": 1,
             "insert_after": "ronix_contract",
+        },
+        {
+            "fieldname": "ronix_commercial_status",
+            "label": "RONIX Commercial Status",
+            "fieldtype": "Select",
+            "options": "Open\nContracted\nProject Active\nClosed",
+            "default": "Open",
+            "read_only": 1,
+            "in_list_view": 1,
+            "insert_after": "ronix_project",
         },
     ],
     "Project": [
@@ -197,12 +206,52 @@ CUSTOM_FIELDS = {
 
 def after_install():
     create_or_update_custom_fields()
+    ensure_existing_project_cost_centers()
+    reconcile_existing_commercial_links()
 
 
 def after_migrate():
     create_or_update_custom_fields()
+    ensure_existing_project_cost_centers()
+    reconcile_existing_commercial_links()
 
 
 def create_or_update_custom_fields():
     create_custom_fields(CUSTOM_FIELDS, update=True)
     frappe.clear_cache()
+
+
+def ensure_existing_project_cost_centers():
+    from ronix_erp.events.project import ensure_all_ronix_project_cost_centers
+
+    ensure_all_ronix_project_cost_centers()
+
+
+def reconcile_existing_commercial_links():
+    from ronix_erp.commercial import sync_contract_commercials
+
+    contracts = frappe.get_all(
+        "RONIX Contract",
+        filters={"docstatus": ["<", 2]},
+        fields=["name", "quotation", "project", "contract_status", "docstatus"],
+    )
+    for contract in contracts:
+        status = "Open"
+        if contract.docstatus == 1:
+            status = "Contracted"
+            if contract.project:
+                status = "Project Active"
+            if contract.contract_status == "Closed":
+                status = "Closed"
+        frappe.db.set_value(
+            "Quotation",
+            contract.quotation,
+            {
+                "ronix_contract": contract.name,
+                "ronix_project": contract.project,
+                "ronix_approved_for_contract": int(contract.docstatus == 1),
+                "ronix_commercial_status": status,
+            },
+            update_modified=False,
+        )
+        sync_contract_commercials(contract.name)

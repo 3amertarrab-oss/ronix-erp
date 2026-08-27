@@ -4,7 +4,6 @@ import types
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -19,6 +18,11 @@ class FakeDB:
 
     def exists(self, doctype, filters):
         return self.duplicate
+
+    def get_value(self, doctype, name, fieldname):
+        if doctype == "Project" and fieldname == "ronix_cost_center":
+            return "PROJ-TEST - RS"
+        return None
 
 
 class PaymentEntryGuardTest(unittest.TestCase):
@@ -99,6 +103,7 @@ class PaymentEntryGuardTest(unittest.TestCase):
             party="TEST CUSTOMER",
             party_type="Customer",
             payment_type="Receive",
+            project="PROJ-TEST",
             paid_amount=38000,
             received_amount=38000,
             references=[
@@ -112,6 +117,7 @@ class PaymentEntryGuardTest(unittest.TestCase):
                 Record(
                     account="Retention Receivable - RS",
                     amount=2000,
+                    cost_center="PROJ-TEST - RS",
                     is_exchange_gain_loss=0,
                 )
             ],

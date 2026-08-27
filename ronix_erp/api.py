@@ -9,6 +9,7 @@ from ronix_erp.accounting import get_accounting_settings, get_claim_adjustments
 @frappe.whitelist()
 def make_contract_from_quotation(source_name, target_doc=None):
     quotation = frappe.get_doc("Quotation", source_name)
+    _require_permissions(quotation, "RONIX Contract")
     if quotation.docstatus != 1:
         frappe.throw(_("Only a submitted Quotation can be converted to a RONIX Contract."))
     if quotation.quotation_to != "Customer":
@@ -18,7 +19,11 @@ def make_contract_from_quotation(source_name, target_doc=None):
         "RONIX Contract", {"quotation": source_name, "docstatus": ["<", 2]}
     )
     if existing:
-        frappe.throw(_("Quotation {0} is already linked to Contract {1}.").format(source_name, existing))
+        frappe.throw(
+            _("Quotation {0} is already linked to Contract {1}.").format(
+                source_name, existing
+            )
+        )
 
     def set_contract_item_values(source, target, source_parent):
         target.description = source.description or source.item_name or source.item_code
@@ -70,6 +75,7 @@ def make_contract_from_quotation(source_name, target_doc=None):
 @frappe.whitelist()
 def make_project_from_contract(source_name):
     contract = frappe.get_doc("RONIX Contract", source_name)
+    _require_permissions(contract, "Project")
     if contract.docstatus != 1 or contract.contract_status not in ("Signed", "Active"):
         frappe.throw(_("Only a submitted Signed or Active Contract can create a Project."))
     if contract.project:
@@ -89,8 +95,11 @@ def make_project_from_contract(source_name):
 @frappe.whitelist()
 def make_claim_from_contract(source_name):
     contract = frappe.get_doc("RONIX Contract", source_name)
+    _require_permissions(contract, "RONIX Claim")
     if contract.docstatus != 1 or contract.contract_status not in ("Signed", "Active"):
         frappe.throw(_("Only a submitted Signed or Active Contract can create a Claim."))
+    if not contract.project:
+        frappe.throw(_("Create and link the Contract Project before creating a Claim."))
 
     claim = frappe.new_doc("RONIX Claim")
     claim.company = contract.company
@@ -99,6 +108,9 @@ def make_claim_from_contract(source_name):
     claim.project = contract.project
     claim.currency = contract.currency
     claim.claim_status = "Draft"
+    claim.retention_percent = contract.retention_percent
+    if len(contract.payment_schedule) == 1:
+        claim.payment_milestone = contract.payment_schedule[0].milestone
     for item in contract.items:
         claim.append(
             "items",
@@ -118,6 +130,7 @@ def make_claim_from_contract(source_name):
 @frappe.whitelist()
 def make_sales_invoice_from_claim(source_name):
     claim = frappe.get_doc("RONIX Claim", source_name)
+    _require_permissions(claim, "Sales Invoice")
     if claim.docstatus != 1 or claim.claim_status != "Approved":
         frappe.throw(_("Only a submitted Approved Claim can create a Sales Invoice."))
 
@@ -137,6 +150,7 @@ def make_sales_invoice_from_claim(source_name):
 
     contract = frappe.get_doc("RONIX Contract", claim.contract)
     contract_items = {row.name: row for row in contract.items}
+    project_cost_center = _get_project_cost_center(claim.project)
 
     invoice = frappe.new_doc("Sales Invoice")
     invoice.company = claim.company
@@ -172,6 +186,7 @@ def make_sales_invoice_from_claim(source_name):
                 "rate": row.rate,
                 "amount": row.amount,
                 "project": claim.project,
+                "cost_center": project_cost_center,
                 "ronix_claim_item": row.name,
             },
         )
@@ -187,6 +202,7 @@ def make_payment_entry_from_invoice(source_name):
     from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 
     invoice = frappe.get_doc("Sales Invoice", source_name)
+    _require_permissions(invoice, "Payment Entry")
     if invoice.docstatus != 1:
         frappe.throw(_("Only a submitted Sales Invoice can create a RONIX collection."))
     if not invoice.get("ronix_claim"):
@@ -247,11 +263,9 @@ def make_payment_entry_from_invoice(source_name):
     payment.received_amount = received_amount
     payment.set("deductions", [])
 
-    cost_center = (
-        frappe.db.get_value("Project", claim.project, "ronix_cost_center")
-        if claim.project
-        else None
-    ) or frappe.get_cached_value("Company", claim.company, "cost_center")
+    cost_center = _get_project_cost_center(claim.project)
+    if payment.meta.has_field("cost_center"):
+        payment.cost_center = cost_center
     for row in adjustments:
         payment.append(
             "deductions",
@@ -294,3 +308,26 @@ def _uom_allows_fraction(uom):
     if not uom:
         return False
     return not bool(frappe.db.get_value("UOM", uom, "must_be_whole_number"))
+
+
+def _get_project_cost_center(project):
+    if not project:
+        frappe.throw(_("A linked Project is required for RONIX accounting entries."))
+    cost_center = frappe.db.get_value("Project", project, "ronix_cost_center")
+    if cost_center:
+        return cost_center
+    from ronix_erp.events.project import ensure_project_cost_center
+
+    cost_center = ensure_project_cost_center(project)
+    if not cost_center:
+        frappe.throw(_("Project {0} requires a Project Cost Center.").format(project))
+    return cost_center
+
+
+def _require_permissions(source_doc, target_doctype):
+    source_doc.check_permission("read")
+    if not frappe.has_permission(target_doctype, ptype="create"):
+        frappe.throw(
+            _("You are not permitted to create {0}.").format(target_doctype),
+            frappe.PermissionError,
+        )

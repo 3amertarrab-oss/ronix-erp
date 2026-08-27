@@ -22,6 +22,13 @@ def validate_payment_entry(doc, method=None):
         frappe.throw(_("Payment Entry company and customer must match the RONIX Claim."))
     if doc.payment_type != "Receive" or doc.party_type != "Customer":
         frappe.throw(_("RONIX collection must be a Customer Receive Payment Entry."))
+    if doc.project != claim.project:
+        frappe.throw(_("Payment Entry project must match the RONIX Claim project."))
+    project_cost_center = frappe.db.get_value(
+        "Project", claim.project, "ronix_cost_center"
+    )
+    if not project_cost_center:
+        frappe.throw(_("RONIX Project requires a Project Cost Center before collection."))
 
     duplicate = frappe.db.exists(
         "Payment Entry",
@@ -37,7 +44,7 @@ def validate_payment_entry(doc, method=None):
     settings = get_accounting_settings(doc.company, claim)
     expected_adjustments = get_claim_adjustments(claim, settings)
     _validate_references(doc, invoice)
-    _validate_adjustments(doc, expected_adjustments)
+    _validate_adjustments(doc, expected_adjustments, project_cost_center)
 
     expected_received = flt(invoice.outstanding_amount) - sum(
         flt(row["amount"]) for row in expected_adjustments
@@ -64,7 +71,7 @@ def _validate_references(doc, invoice):
         frappe.throw(_("RONIX collection must allocate the full invoice outstanding amount."))
 
 
-def _validate_adjustments(doc, expected_adjustments):
+def _validate_adjustments(doc, expected_adjustments, project_cost_center):
     actual = [row for row in doc.deductions if not row.get("is_exchange_gain_loss")]
     if len(actual) != len(expected_adjustments):
         frappe.throw(_("Payment Entry adjustments must match the RONIX Claim."))
@@ -74,6 +81,8 @@ def _validate_adjustments(doc, expected_adjustments):
     received = {(row.account, round(flt(row.amount), 2)) for row in actual}
     if received != expected:
         frappe.throw(_("Payment Entry retention and withholding adjustments are incorrect."))
+    if any(row.cost_center != project_cost_center for row in actual):
+        frappe.throw(_("Payment Entry adjustments must use the Project Cost Center."))
 
 
 def on_submit_payment_entry(doc, method=None):
@@ -87,6 +96,9 @@ def on_submit_payment_entry(doc, method=None):
         {"payment_entry": doc.name, "collection_status": status},
         update_modified=True,
     )
+    from ronix_erp.commercial import sync_contract_commercials
+
+    sync_contract_commercials(claim.contract)
 
 
 def on_cancel_payment_entry(doc, method=None):
@@ -100,3 +112,7 @@ def on_cancel_payment_entry(doc, method=None):
             {"payment_entry": None, "collection_status": "Not Collected"},
             update_modified=True,
         )
+    contract = frappe.db.get_value("RONIX Claim", doc.ronix_claim, "contract")
+    from ronix_erp.commercial import sync_contract_commercials
+
+    sync_contract_commercials(contract)
