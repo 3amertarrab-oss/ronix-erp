@@ -23,8 +23,8 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.2.5"', package_init)
-        self.assertIn('app_version = "0.2.5"', hooks)
+        self.assertIn('__version__ = "0.3.0"', package_init)
+        self.assertIn('app_version = "0.3.0"', hooks)
 
     def test_submitted_contract_can_capture_required_signatories(self):
         path = (
@@ -95,6 +95,32 @@ class ReleaseSafetyTest(unittest.TestCase):
         self.assertIn("seen != set(expected_by_name)", invoice_events)
         self.assertIn("def on_submit_sales_invoice", invoice_events)
         self.assertIn("def on_cancel_sales_invoice", invoice_events)
+
+    def test_collection_mapping_and_accounting_settings_are_present(self):
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+        hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
+        settings_path = (
+            ROOT
+            / "ronix_erp"
+            / "ronix_erp"
+            / "doctype"
+            / "ronix_accounting_settings"
+            / "ronix_accounting_settings.json"
+        )
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        fields = {row["fieldname"]: row for row in settings["fields"]}
+
+        self.assertIn("def make_payment_entry_from_invoice", api)
+        self.assertIn('payment.set("deductions", [])', api)
+        self.assertIn("payment.set_amounts()", api)
+        self.assertIn('"Payment Entry": {', hooks)
+        self.assertIn("default_collection_account", fields)
+        self.assertIn("retention_receivable_account", fields)
+
+    def test_collection_never_auto_submits_payment_entry(self):
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+        self.assertNotIn("payment.submit()", api)
+        self.assertNotIn("payment.insert()", api)
 
 
 if __name__ == "__main__":

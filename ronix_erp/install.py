@@ -166,6 +166,32 @@ CUSTOM_FIELDS = {
             "insert_after": "sales_order_item",
         },
     ],
+    "Payment Entry": [
+        {
+            "fieldname": "ronix_section",
+            "label": "RONIX Collection Source",
+            "fieldtype": "Section Break",
+            "insert_after": "project",
+        },
+        {
+            "fieldname": "ronix_claim",
+            "label": "RONIX Claim",
+            "fieldtype": "Link",
+            "options": "RONIX Claim",
+            "read_only": 1,
+            "no_copy": 1,
+            "insert_after": "ronix_section",
+        },
+        {
+            "fieldname": "ronix_sales_invoice",
+            "label": "RONIX Sales Invoice",
+            "fieldtype": "Link",
+            "options": "Sales Invoice",
+            "read_only": 1,
+            "no_copy": 1,
+            "insert_after": "ronix_claim",
+        },
+    ],
 }
 
 

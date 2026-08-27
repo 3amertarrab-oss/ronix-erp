@@ -2,10 +2,18 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.2.5
+## Scope of v0.3.0
 
 - Fractional service claims automatically use the item's fraction-safe stock UOM
   when legacy contract/claim rows still carry a whole-number UOM such as `Nos`.
+- Company-specific collection settings require an explicit Bank/Cash account and
+  separate Asset accounts for retention and withholding receivables.
+- Submitted RONIX invoices can create a controlled draft Payment Entry that allocates
+  the gross receivable, records actual cash received, and moves retention/withholding
+  to their configured receivable accounts.
+- Payment Entry guards block duplicate collections, altered amounts, altered accounts,
+  wrong customers, and unrelated invoices.
+- Payment Entries are never inserted or submitted automatically.
 
 This first controlled release establishes the commercial data model:
 
@@ -36,7 +44,7 @@ Implemented in this release:
 
 Not implemented yet:
 
-- Automatic posting to the General Ledger.
+- Automatic submission or posting to the General Ledger.
 - Automatic claim-to-invoice submission.
 - Automatic inventory or manufacturing postings.
 - Migration of live balances.
@@ -46,7 +54,7 @@ Those operations remain deliberately disabled until the end-to-end pilot is reco
 
 ## Controlled legacy migration
 
-The v0.2 migration endpoint imports **master data only**. Financial documents remain blocked.
+The migration endpoint imports **master data only**. Financial documents remain blocked.
 Only a System Manager can run it, and the confirmed SHA-256 must match the previewed snapshot.
 Re-running the same import skips records by their immutable `ronix_legacy_id`.
 

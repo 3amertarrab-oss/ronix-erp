@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
+from ronix_erp.accounting import get_accounting_settings
+
 
 def validate_sales_invoice(doc, method=None):
     if not doc.get("ronix_claim"):
@@ -109,6 +111,20 @@ def on_submit_sales_invoice(doc, method=None):
         {"sales_invoice": doc.name, "claim_status": "Invoiced"},
         update_modified=True,
     )
+
+
+def before_submit_sales_invoice(doc, method=None):
+    if not doc.get("ronix_claim"):
+        return
+    claim = frappe.get_doc("RONIX Claim", doc.ronix_claim)
+    if flt(claim.tax_amount):
+        frappe.throw(
+            _(
+                "RONIX Claim tax must be configured through an ERPNext Sales Taxes "
+                "and Charges Template before invoice submission."
+            )
+        )
+    get_accounting_settings(doc.company, claim)
 
 
 def on_cancel_sales_invoice(doc, method=None):
