@@ -2,6 +2,9 @@ import frappe
 from frappe import _
 
 
+PROJECT_COST_CENTER_GROUP = "RONIX Projects"
+
+
 def validate_project(doc, method=None):
     if not doc.get("ronix_contract"):
         return
@@ -56,11 +59,7 @@ def ensure_project_cost_center(project):
     ):
         return doc.ronix_cost_center
 
-    parent_cost_center = frappe.get_cached_value("Company", doc.company, "cost_center")
-    if not parent_cost_center:
-        frappe.throw(
-            _("Company {0} requires a default Cost Center.").format(doc.company)
-        )
+    parent_cost_center = ensure_project_cost_center_group(doc.company)
 
     cost_center_name = (doc.name or doc.project_name or "RONIX Project")[:120]
     cost_center = frappe.db.exists(
@@ -92,6 +91,81 @@ def ensure_project_cost_center(project):
         update_modified=False,
     )
     return cost_center
+
+
+def ensure_project_cost_center_group(company):
+    """Return a valid group Cost Center for RONIX project children."""
+    default_cost_center = frappe.get_cached_value("Company", company, "cost_center")
+    default_row = _get_cost_center(default_cost_center)
+
+    tree_parent = None
+    if _is_usable_group(default_row, company):
+        tree_parent = default_row.name
+    elif default_row and default_row.parent_cost_center:
+        parent_row = _get_cost_center(default_row.parent_cost_center)
+        if _is_usable_group(parent_row, company):
+            tree_parent = parent_row.name
+
+    if not tree_parent:
+        tree_parent = frappe.db.get_value(
+            "Cost Center",
+            {"company": company, "is_group": 1, "disabled": 0},
+            "name",
+            order_by="lft asc",
+        )
+    if not tree_parent:
+        frappe.throw(
+            _("Company {0} requires an enabled group Cost Center for projects.").format(
+                company
+            )
+        )
+
+    existing_group = frappe.db.get_value(
+        "Cost Center",
+        {"cost_center_name": PROJECT_COST_CENTER_GROUP, "company": company},
+        ["name", "is_group", "disabled"],
+        as_dict=True,
+    )
+    if existing_group:
+        if not existing_group.is_group or existing_group.disabled:
+            frappe.throw(
+                _(
+                    "Cost Center {0} must be an enabled group before project migration."
+                ).format(existing_group.name)
+            )
+        return existing_group.name
+
+    group_doc = frappe.get_doc(
+        {
+            "doctype": "Cost Center",
+            "cost_center_name": PROJECT_COST_CENTER_GROUP,
+            "parent_cost_center": tree_parent,
+            "company": company,
+            "is_group": 1,
+        }
+    )
+    group_doc.insert(ignore_permissions=True)
+    return group_doc.name
+
+
+def _get_cost_center(name):
+    if not name:
+        return None
+    return frappe.db.get_value(
+        "Cost Center",
+        name,
+        ["name", "parent_cost_center", "company", "is_group", "disabled"],
+        as_dict=True,
+    )
+
+
+def _is_usable_group(cost_center, company):
+    return bool(
+        cost_center
+        and cost_center.company == company
+        and cost_center.is_group
+        and not cost_center.disabled
+    )
 
 
 def ensure_all_ronix_project_cost_centers():
