@@ -7,6 +7,37 @@ from ronix_erp.accounting import get_accounting_settings, get_claim_adjustments
 
 
 @frappe.whitelist()
+def get_workspace_summary():
+    """Return permission-aware counters for the RONIX operational hub."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please sign in to open RONIX ERP."), frappe.PermissionError)
+
+    return {
+        "projects": _permitted_count("Project"),
+        "contracts": _permitted_count(
+            "RONIX Contract", {"contract_status": ["in", ["Signed", "Active"]]}
+        ),
+        "claims": _permitted_count("RONIX Claim", {"docstatus": ["<", 2]}),
+        "invoices": _permitted_count("Sales Invoice", {"docstatus": 1}),
+    }
+
+
+def _permitted_count(doctype, filters=None):
+    if not frappe.has_permission(doctype, ptype="read"):
+        return None
+
+    # frappe.get_list applies user permissions, unlike frappe.get_all/db.count.
+    return len(
+        frappe.get_list(
+            doctype,
+            filters=filters or {},
+            fields=["name"],
+            page_length=100000,
+        )
+    )
+
+
+@frappe.whitelist()
 def make_contract_from_quotation(source_name, target_doc=None):
     quotation = frappe.get_doc("Quotation", source_name)
     _require_permissions(quotation, "RONIX Contract")

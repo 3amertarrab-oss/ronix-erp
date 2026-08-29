@@ -4,9 +4,20 @@ app_publisher = "Eng. Amer Tarrab - RONIX STEEL"
 app_description = "Controlled contracts, claims, projects, and commercial workflows for RONIX STEEL"
 app_email = "3amertarrab@gmail.com"
 app_license = "MIT"
-app_version = "0.5.0"
+app_version = "0.6.0"
 
 required_apps = ["erpnext"]
+
+# Frappe v16 no longer builds the Desktop app icon from config/desktop.py.
+# Register the RONIX application explicitly and send users to its operational hub.
+add_to_apps_screen = [
+    {
+        "name": "ronix_erp",
+        "logo": "/assets/ronix_erp/images/ronix-logo.png",
+        "title": "RONIX ERP",
+        "route": "/desk/ronix-erp-dashboard",
+    }
+]
 
 after_install = "ronix_erp.install.after_install"
 after_migrate = "ronix_erp.install.after_migrate"

@@ -22,8 +22,8 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.5.0"', package_init)
-        self.assertIn('app_version = "0.5.0"', hooks)
+        self.assertIn('__version__ = "0.6.0"', package_init)
+        self.assertIn('app_version = "0.6.0"', hooks)
 
     def test_contract_exposes_live_balances_and_retention_policy(self):
         path = (
@@ -64,6 +64,9 @@ class ReleaseSafetyTest(unittest.TestCase):
         )
 
         self.assertIn("def ensure_project_cost_center", project)
+        self.assertIn("def ensure_project_cost_center_group", project)
+        self.assertIn('"is_group": 1', project)
+        self.assertIn('order_by="lft asc"', project)
         self.assertIn('"cost_center": project_cost_center', api)
         self.assertNotIn('or frappe.get_cached_value("Company", claim.company, "cost_center")', api)
 

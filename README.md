@@ -2,9 +2,15 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Scope of v0.5.0
+## Scope of v0.6.0
 
-Version 0.5.0 is the first staging-hardening release based on the live Frappe Cloud
+Version 0.6.0 adds the missing RONIX operational hub and Frappe v16 Desktop app
+registration. The responsive hub provides one branded entry point for projects,
+customers, quotations, contracts, claims, invoices, collections, purchasing, inventory,
+manufacturing, project profitability, accounting, and document printing. It uses the
+official RONIX logo and exposes permission-aware operational counters.
+
+It retains the staging migration hotfixes based on the live Frappe Cloud
 reconciliation of quotation `SAL-QTN-2026-00001`, contract `CON-2026-00001`, claim
 `CLM-2026-00002`, invoice `ACC-SINV-2026-00001`, and payment
 `ACC-PAY-2026-00001`.
@@ -13,8 +19,11 @@ reconciliation of quotation `SAL-QTN-2026-00001`, contract `CON-2026-00001`, cla
   separate RONIX commercial status that does not falsify ERPNext's standard status.
 - Duplicate active contracts for the same quotation remain blocked in both mapping
   and document validation.
-- Every RONIX Project receives a dedicated Cost Center. Claim invoices and retention /
-  withholding adjustments must use it; the company default is no longer a fallback.
+- Every RONIX Project receives a dedicated Cost Center. When the company default is a
+  leaf Cost Center, migration creates a `RONIX Projects` group under a valid enabled
+  company group and places project Cost Centers inside it. Claim invoices and retention /
+  withholding adjustments must use the project Cost Center; the company default is no
+  longer a fallback.
 - Contracts show event-driven live balances for claimed, invoiced, cash-collected,
   retained, withheld, outstanding, and remaining values.
 - Payment milestones reconcile to submitted claims, invoices, and payments instead of
