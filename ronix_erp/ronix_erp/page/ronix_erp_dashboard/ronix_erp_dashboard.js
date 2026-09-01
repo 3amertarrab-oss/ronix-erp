@@ -587,6 +587,7 @@ function injectStyles() {
     style.id = "ronix-executive-dashboard-style";
     style.textContent = `
         body.ronix-dashboard-active .page-head{display:none!important}
+        body.ronix-dashboard-active .body-sidebar-container,body.ronix-dashboard-active .body-sidebar-placeholder{display:none!important}
         body.ronix-dashboard-active .layout-main-section-wrapper{margin:0!important}
         body.ronix-dashboard-active .layout-main-section{padding:0!important}
         body.ronix-dashboard-active .page-body{max-width:none!important;padding:0!important}
