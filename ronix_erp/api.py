@@ -711,3 +711,431 @@ def _require_permissions(source_doc, target_doctype):
             _("You are not permitted to create {0}.").format(target_doctype),
             frappe.PermissionError,
         )
+
+
+import frappe
+from frappe import _
+from frappe.utils import flt, get_first_day, nowdate
+
+
+@frappe.whitelist()
+def get_module_dashboard(module_name):
+    """Return a permission-aware overview for one RONIX workspace module."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please sign in to open RONIX ERP."), frappe.PermissionError)
+
+    module_name = (module_name or "").strip().lower()
+    builders = {
+        "sales": _sales_module,
+        "contracts": _contracts_module,
+        "projects": _projects_module,
+        "engineering": _engineering_module,
+        "purchasing": _purchasing_module,
+        "inventory": _inventory_module,
+        "manufacturing": _manufacturing_module,
+        "expenses": _expenses_module,
+        "billing": _billing_module,
+        "accounting": _accounting_module,
+        "reports": _reports_module,
+        "administration": _administration_module,
+    }
+    if module_name not in builders:
+        frappe.throw(_("Unknown RONIX workspace module."))
+
+    company_row = _get_dashboard_company()
+    payload = builders[module_name](company_row.name, company_row.default_currency)
+    payload.update(
+        {
+            "module": module_name,
+            "company": company_row.name,
+            "currency": company_row.default_currency or "EGP",
+            "generated_on": nowdate(),
+        }
+    )
+    payload["recent"] = sorted(
+        payload.get("recent") or [],
+        key=lambda row: str(row.get("modified") or ""),
+        reverse=True,
+    )[:10]
+    return payload
+
+
+def _sales_module(company, currency):
+    quotation_filters = {"docstatus": ["<", 2]}
+    invoice_filters = {"docstatus": 1}
+    return {
+        "cards": [
+            _count_module_card("customers", "Customer"),
+            _count_module_card("quotations", "Quotation", quotation_filters, company),
+            _money_module_card("quotation_value", "Quotation", "base_grand_total", quotation_filters, company),
+            _money_module_card("receivables", "Sales Invoice", "outstanding_amount", {**invoice_filters, "outstanding_amount": [">", 0]}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Quotation",
+            quotation_filters,
+            ["party_name", "status", "transaction_date", "grand_total", "currency"],
+            "party_name",
+            "name",
+            "status",
+            "transaction_date",
+            "grand_total",
+            company,
+        ),
+    }
+
+
+def _contracts_module(company, currency):
+    contract_filters = {"docstatus": ["<", 2]}
+    claim_filters = {"docstatus": ["<", 2]}
+    recent = _recent_module_rows(
+        "RONIX Contract",
+        contract_filters,
+        ["title", "customer", "contract_status", "contract_date", "contract_value", "currency"],
+        "title",
+        "customer",
+        "contract_status",
+        "contract_date",
+        "contract_value",
+        company,
+    )
+    recent += _recent_module_rows(
+        "RONIX Claim",
+        claim_filters,
+        ["customer", "contract", "claim_status", "posting_date", "net_amount", "currency"],
+        "contract",
+        "customer",
+        "claim_status",
+        "posting_date",
+        "net_amount",
+        company,
+    )
+    return {
+        "cards": [
+            _count_module_card("contracts", "RONIX Contract", contract_filters, company),
+            _count_module_card("active_contracts", "RONIX Contract", {**contract_filters, "contract_status": ["in", ["Signed", "Active"]]}, company),
+            _count_module_card("claims", "RONIX Claim", claim_filters, company),
+            _money_module_card("contract_value", "RONIX Contract", "contract_value", contract_filters, company),
+        ],
+        "recent": recent,
+    }
+
+
+def _projects_module(company, currency):
+    project_filters = {}
+    return {
+        "cards": [
+            _count_module_card("projects", "Project", project_filters, company),
+            _count_module_card("open_projects", "Project", {"status": "Open"}, company),
+            _count_module_card("open_tasks", "Task", {"status": ["not in", ["Completed", "Cancelled"]]}, company),
+            _money_module_card("project_contract_value", "RONIX Contract", "contract_value", {"docstatus": ["<", 2]}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Project",
+            project_filters,
+            ["project_name", "customer", "status", "expected_end_date", "percent_complete"],
+            "project_name",
+            "customer",
+            "status",
+            "expected_end_date",
+            None,
+            company,
+            progress_field="percent_complete",
+        ),
+    }
+
+
+def _engineering_module(company, currency):
+    today = nowdate()
+    open_filters = {"status": ["not in", ["Completed", "Cancelled"]]}
+    timesheet_filters = {
+        "docstatus": 1,
+        "start_date": ["between", [get_first_day(today), today]],
+    }
+    return {
+        "cards": [
+            _count_module_card("open_tasks", "Task", open_filters, company),
+            _count_module_card("overdue_tasks", "Task", {**open_filters, "exp_end_date": ["<", today]}, company),
+            _count_module_card("timesheets", "Timesheet", timesheet_filters, company),
+            _number_module_card("engineering_hours", "Timesheet", "total_hours", timesheet_filters, company),
+        ],
+        "recent": _recent_module_rows(
+            "Task",
+            {},
+            ["subject", "project", "status", "exp_end_date", "progress"],
+            "subject",
+            "project",
+            "status",
+            "exp_end_date",
+            None,
+            company,
+            progress_field="progress",
+        ),
+    }
+
+
+def _purchasing_module(company, currency):
+    po_filters = {"docstatus": ["<", 2]}
+    return {
+        "cards": [
+            _count_module_card("suppliers", "Supplier"),
+            _count_module_card("purchase_orders", "Purchase Order", po_filters, company),
+            _money_module_card("purchase_order_value", "Purchase Order", "base_grand_total", po_filters, company),
+            _money_module_card("payables", "Purchase Invoice", "outstanding_amount", {"docstatus": 1, "outstanding_amount": [">", 0]}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Purchase Order",
+            po_filters,
+            ["supplier", "status", "transaction_date", "grand_total", "currency"],
+            "supplier",
+            "name",
+            "status",
+            "transaction_date",
+            "grand_total",
+            company,
+        ),
+    }
+
+
+def _inventory_module(company, currency):
+    stock_filters = {"docstatus": ["<", 2]}
+    return {
+        "cards": [
+            _count_module_card("items", "Item", {"disabled": 0}),
+            _count_module_card("warehouses", "Warehouse", {"is_group": 0}, company),
+            _count_module_card("stock_entries", "Stock Entry", stock_filters, company),
+            _count_module_card("material_receipts", "Stock Entry", {**stock_filters, "stock_entry_type": "Material Receipt"}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Stock Entry",
+            stock_filters,
+            ["stock_entry_type", "purpose", "posting_date", "docstatus"],
+            "stock_entry_type",
+            "purpose",
+            "docstatus",
+            "posting_date",
+            None,
+            company,
+        ),
+    }
+
+
+def _manufacturing_module(company, currency):
+    work_order_filters = {"docstatus": ["<", 2]}
+    return {
+        "cards": [
+            _count_module_card("work_orders", "Work Order", work_order_filters, company),
+            _count_module_card("open_work_orders", "Work Order", {**work_order_filters, "status": ["not in", ["Completed", "Stopped", "Cancelled"]]}, company),
+            _count_module_card("boms", "BOM", {"docstatus": 1, "is_active": 1}, company),
+            _number_module_card("produced_qty", "Work Order", "produced_qty", {"docstatus": 1}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Work Order",
+            work_order_filters,
+            ["production_item", "project", "status", "planned_start_date", "qty", "produced_qty"],
+            "production_item",
+            "project",
+            "status",
+            "planned_start_date",
+            None,
+            company,
+            progress_field="produced_qty",
+        ),
+    }
+
+
+def _expenses_module(company, currency):
+    expense_filters = {"docstatus": ["<", 2]}
+    return {
+        "cards": [
+            _count_module_card("expense_claims", "Expense Claim", expense_filters, company),
+            _count_module_card("pending_expenses", "Expense Claim", {"docstatus": 0}, company),
+            _money_module_card("claimed_expenses", "Expense Claim", "total_claimed_amount", expense_filters, company),
+            _money_module_card("purchase_invoice_value", "Purchase Invoice", "base_net_total", {"docstatus": 1}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Expense Claim",
+            expense_filters,
+            ["employee", "status", "posting_date", "total_claimed_amount"],
+            "employee",
+            "name",
+            "status",
+            "posting_date",
+            "total_claimed_amount",
+            company,
+        ),
+    }
+
+
+def _billing_module(company, currency):
+    today = nowdate()
+    collection_filters = {
+        "docstatus": 1,
+        "payment_type": "Receive",
+        "posting_date": ["between", [get_first_day(today), today]],
+    }
+    claim_filters = {"docstatus": ["<", 2]}
+    return {
+        "cards": [
+            _count_module_card("claims", "RONIX Claim", claim_filters, company),
+            _count_module_card("approved_claims", "RONIX Claim", {**claim_filters, "claim_status": ["in", ["Approved", "Invoiced"]]}, company),
+            _money_module_card("receivables", "Sales Invoice", "outstanding_amount", {"docstatus": 1, "outstanding_amount": [">", 0]}, company),
+            _money_module_card("collected_this_month", "Payment Entry", "base_received_amount", collection_filters, company),
+        ],
+        "recent": _recent_module_rows(
+            "RONIX Claim",
+            claim_filters,
+            ["customer", "contract", "claim_status", "collection_status", "posting_date", "net_amount", "currency"],
+            "contract",
+            "customer",
+            "claim_status",
+            "posting_date",
+            "net_amount",
+            company,
+        ),
+    }
+
+
+def _accounting_module(company, currency):
+    return {
+        "cards": [
+            _count_module_card("journal_entries", "Journal Entry", {"docstatus": ["<", 2]}, company),
+            _count_module_card("payment_entries", "Payment Entry", {"docstatus": 1}, company),
+            _money_module_card("receivables", "Sales Invoice", "outstanding_amount", {"docstatus": 1, "outstanding_amount": [">", 0]}, company),
+            _money_module_card("payables", "Purchase Invoice", "outstanding_amount", {"docstatus": 1, "outstanding_amount": [">", 0]}, company),
+        ],
+        "recent": _recent_module_rows(
+            "Journal Entry",
+            {"docstatus": ["<", 2]},
+            ["voucher_type", "posting_date", "total_debit", "docstatus"],
+            "voucher_type",
+            "name",
+            "docstatus",
+            "posting_date",
+            "total_debit",
+            company,
+        ),
+    }
+
+
+def _reports_module(company, currency):
+    return {
+        "cards": [
+            _count_module_card("projects", "Project", {}, company),
+            _count_module_card("contracts", "RONIX Contract", {"docstatus": ["<", 2]}, company),
+            _count_module_card("sales_invoices", "Sales Invoice", {"docstatus": 1}, company),
+            _count_module_card("purchase_invoices", "Purchase Invoice", {"docstatus": 1}, company),
+        ],
+        "recent": [],
+    }
+
+
+def _administration_module(company, currency):
+    return {
+        "cards": [
+            _count_module_card("active_users", "User", {"enabled": 1, "user_type": "System User"}),
+            _count_module_card("employees", "Employee", {"status": "Active"}, company),
+            _count_module_card("roles", "Role", {"disabled": 0}),
+            _count_module_card("cost_centers", "Cost Center", {"is_group": 0}, company),
+        ],
+        "recent": _recent_module_rows(
+            "User",
+            {"enabled": 1, "user_type": "System User"},
+            ["full_name", "username", "enabled", "last_active"],
+            "full_name",
+            "username",
+            "enabled",
+            "last_active",
+            None,
+            None,
+        ),
+    }
+
+
+def _count_module_card(key, doctype, filters=None, company=None):
+    return {
+        "key": key,
+        "kind": "count",
+        "value": len(_module_rows(doctype, filters, ["name"], company, 100000)),
+        "doctype": doctype,
+    }
+
+
+def _money_module_card(key, doctype, fieldname, filters=None, company=None):
+    return {
+        "key": key,
+        "kind": "money",
+        "value": sum(flt(row.get(fieldname)) for row in _module_rows(doctype, filters, [fieldname], company, 100000)),
+        "doctype": doctype,
+    }
+
+
+def _number_module_card(key, doctype, fieldname, filters=None, company=None):
+    return {
+        "key": key,
+        "kind": "number",
+        "value": sum(flt(row.get(fieldname)) for row in _module_rows(doctype, filters, [fieldname], company, 100000)),
+        "doctype": doctype,
+    }
+
+
+def _recent_module_rows(
+    doctype,
+    filters,
+    fields,
+    title_field,
+    subtitle_field,
+    status_field,
+    date_field,
+    amount_field,
+    company,
+    progress_field=None,
+):
+    requested_fields = list(fields) + [title_field, subtitle_field, status_field, date_field, amount_field, progress_field]
+    rows = _module_rows(doctype, filters, requested_fields, company, 8)
+    records = []
+    for row in rows:
+        status = row.get(status_field) if status_field else None
+        if status_field == "docstatus":
+            status = {0: "Draft", 1: "Submitted", 2: "Cancelled"}.get(row.get("docstatus"), "Draft")
+        amount = row.get(amount_field) if amount_field else None
+        records.append(
+            {
+                "doctype": doctype,
+                "name": row.name,
+                "title": row.get(title_field) or row.name,
+                "subtitle": row.get(subtitle_field) or row.name,
+                "status": status,
+                "date": row.get(date_field) if date_field else None,
+                "amount": flt(amount) if amount is not None else None,
+                "currency": row.get("currency"),
+                "progress": flt(row.get(progress_field)) if progress_field else None,
+                "modified": row.get("modified"),
+            }
+        )
+    return records
+
+
+def _module_rows(doctype, filters, fields, company, page_length):
+    if not frappe.db.exists("DocType", doctype) or not frappe.has_permission(doctype, ptype="read"):
+        return []
+    meta = frappe.get_meta(doctype)
+    clean_filters = {}
+    for fieldname, condition in (filters or {}).items():
+        if fieldname in ("name", "docstatus", "modified") or meta.has_field(fieldname):
+            clean_filters[fieldname] = condition
+    if company and meta.has_field("company"):
+        clean_filters["company"] = company
+
+    clean_fields = ["name", "modified"]
+    for fieldname in fields or []:
+        if not fieldname or fieldname in clean_fields:
+            continue
+        if fieldname == "docstatus" or meta.has_field(fieldname):
+            clean_fields.append(fieldname)
+    return frappe.get_list(
+        doctype,
+        filters=clean_filters,
+        fields=clean_fields,
+        order_by="modified desc",
+        page_length=page_length,
+    )
