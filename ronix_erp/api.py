@@ -247,7 +247,10 @@ def get_executive_dashboard():
                 "contract_value": flt(row.get("contract_value")),
                 "invoiced_amount": flt(row.get("invoiced_amount")),
                 "collected_amount": flt(row.get("collected_amount")),
+                "retention_amount": flt(row.get("retention_amount")),
+                "withholding_amount": flt(row.get("withholding_amount")),
                 "outstanding_amount": flt(row.get("outstanding_amount")),
+                "unbilled_contract": flt(row.get("unbilled_contract")),
                 "actual_revenue": flt(row.get("actual_revenue")),
                 "actual_cost": flt(row.get("actual_cost")),
                 "net_profit": flt(row.get("net_profit")),
@@ -311,7 +314,10 @@ def get_executive_dashboard():
     totals = {
         "contract_value": _sum_dashboard_rows(projects, "contract_value"),
         "collected_amount": _sum_dashboard_rows(projects, "collected_amount"),
+        "retention_amount": _sum_dashboard_rows(projects, "retention_amount"),
+        "withholding_amount": _sum_dashboard_rows(projects, "withholding_amount"),
         "outstanding_amount": _sum_dashboard_rows(projects, "outstanding_amount"),
+        "unbilled_contract": _sum_dashboard_rows(projects, "unbilled_contract"),
         "actual_cost": _sum_dashboard_rows(projects, "actual_cost"),
         "net_profit": _sum_dashboard_rows(projects, "net_profit"),
     }
@@ -713,14 +719,11 @@ def _require_permissions(source_doc, target_doctype):
         )
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt, get_first_day, nowdate
-
-
 @frappe.whitelist()
 def get_module_dashboard(module_name):
     """Return a permission-aware overview for one RONIX workspace module."""
+    from frappe.utils import nowdate
+
     if frappe.session.user == "Guest":
         frappe.throw(_("Please sign in to open RONIX ERP."), frappe.PermissionError)
 
@@ -845,6 +848,8 @@ def _projects_module(company, currency):
 
 
 def _engineering_module(company, currency):
+    from frappe.utils import get_first_day, nowdate
+
     today = nowdate()
     open_filters = {"status": ["not in", ["Completed", "Cancelled"]]}
     timesheet_filters = {
@@ -967,6 +972,8 @@ def _expenses_module(company, currency):
 
 
 def _billing_module(company, currency):
+    from frappe.utils import get_first_day, nowdate
+
     today = nowdate()
     collection_filters = {
         "docstatus": 1,

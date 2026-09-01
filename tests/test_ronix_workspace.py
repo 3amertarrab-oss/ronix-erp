@@ -47,7 +47,7 @@ class TestRonixWorkspace(unittest.TestCase):
             "Purchase Order",
             "Stock Entry",
             "Work Order",
-            "RONIX%20Project%20Profitability",
+            "RONIX Project Profitability",
         ):
             self.assertIn(required, source)
 
@@ -63,13 +63,35 @@ class TestRonixWorkspace(unittest.TestCase):
         api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
 
         for required in (
-            "rx-v5521",
+            "ronix-erp",
             "ملخص اليوم",
             "محفظة المشروعات والربحية",
             "إضافة سريعة",
             "ronix-logo.png",
-            "@media(max-width:760px)",
+            "@media(max-width:900px)",
         ):
             self.assertIn(required, source)
-        self.assertIn("get_dashboard_data", api)
+        self.assertIn("get_executive_dashboard", api)
+        self.assertIn("get_module_dashboard", api)
         self.assertIn("RONIX Project Profitability", source)
+
+    def test_workspace_exposes_reconciled_commercial_balances(self):
+        source = (
+            ROOT
+            / "ronix_erp"
+            / "ronix_erp"
+            / "page"
+            / "ronix_erp_dashboard"
+            / "ronix_erp_dashboard.js"
+        ).read_text(encoding="utf-8")
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+
+        for fieldname in (
+            "unbilled_contract",
+            "retention_amount",
+            "withholding_amount",
+            "outstanding_amount",
+        ):
+            self.assertIn(fieldname, api)
+        for label in ("غير مفوتر", "احتجاز", "خصم من المنبع", "مستحق الفواتير"):
+            self.assertIn(label, source)
