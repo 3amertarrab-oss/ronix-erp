@@ -559,7 +559,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             .catch(() => {
                 root.find("[data-loading-state]").show().addClass("error").html(`${icon("error")} <span>${esc(t("load_error"))}</span>`);
             })
-            .finally(() => {
+            .always(() => {
                 state.loading = false;
                 root.find("[data-refresh]").removeClass("is-loading");
             });
