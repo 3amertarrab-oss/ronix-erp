@@ -5,7 +5,14 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         single_column: true,
     });
 
-    const state = { lang: "ar", data: null, loading: false };
+    const state = {
+        lang: "ar",
+        data: null,
+        loading: false,
+        activeModule: "dashboard",
+        moduleData: {},
+        moduleLoading: false,
+    };
     const esc = (value) => frappe.utils.escape_html(String(value ?? ""));
 
     const labels = {
@@ -88,6 +95,96 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             open: "فتح",
             status: "الحالة",
             unnamed: "مشروع بدون اسم",
+            overview: "نظرة عامة",
+            module_search: "ابحث داخل القسم...",
+            recent_records: "آخر السجلات",
+            quick_actions: "إجراءات القسم",
+            workflow: "مسار العمل المترابط",
+            no_records: "لا توجد سجلات متاحة في هذا القسم حتى الآن.",
+            open_list: "فتح القائمة الكاملة",
+            view_all: "عرض الكل",
+            amount: "القيمة",
+            date: "التاريخ",
+            document: "المستند",
+            details: "التفاصيل",
+            billing: "الفوترة والتحصيل",
+            reports_print: "التقارير والطباعة",
+            administration: "الإدارة والنظام",
+            sales_title: "إدارة العملاء والمبيعات",
+            sales_subtitle: "العميل ← عرض السعر ← الاعتماد ← الفاتورة",
+            contracts_title: "العقود والمطالبات",
+            contracts_subtitle: "متابعة العقد وقيمته ومراحله ومطالباته من مصدر واحد",
+            projects_title: "مركز قيادة المشروعات",
+            projects_subtitle: "المشروع ومركز التكلفة والمهام والربحية في شاشة واحدة",
+            engineering_title: "الهندسة والتنفيذ",
+            engineering_subtitle: "المهام والمواعيد وساعات الفريق ومتابعة التنفيذ",
+            purchasing_title: "المشتريات والموردون",
+            purchasing_subtitle: "طلب الشراء ← أمر الشراء ← الاستلام ← فاتورة المورد",
+            inventory_title: "المخزون وحركة المواد",
+            inventory_subtitle: "الأصناف والمخازن والاستلام والصرف والتحويل",
+            manufacturing_title: "التصنيع والجمالونات",
+            manufacturing_subtitle: "BOM ← أمر التشغيل ← الإنتاج ← الجودة ← التسليم",
+            expenses_title: "المصروفات ومراقبة التكلفة",
+            expenses_subtitle: "تسجيل المصروف وربطه بالمشروع ومركز التكلفة",
+            billing_title: "المطالبات والفوترة والتحصيل",
+            billing_subtitle: "المطالبة ← الفاتورة ← التحصيل ← الرصيد المستحق",
+            accounting_title: "المالية والحسابات",
+            accounting_subtitle: "القيود والمدفوعات والأرصدة والتقارير المالية",
+            reports_title: "مركز التقارير والطباعة",
+            reports_subtitle: "تقارير تشغيلية ومالية قابلة للتصفية والطباعة والتصدير",
+            administration_title: "إدارة النظام والصلاحيات",
+            administration_subtitle: "المستخدمون والموظفون والأدوار ومراكز التكلفة",
+            quotation_value: "قيمة عروض الأسعار",
+            active_contracts: "العقود النشطة",
+            project_contract_value: "قيمة عقود المشروعات",
+            open_projects: "المشروعات المفتوحة",
+            open_tasks: "المهام المفتوحة",
+            overdue_tasks: "المهام المتأخرة",
+            engineering_hours: "ساعات الفريق هذا الشهر",
+            purchase_order_value: "قيمة أوامر الشراء",
+            payables: "مستحقات الموردين",
+            material_receipts: "إيصالات المواد",
+            open_work_orders: "أوامر التشغيل المفتوحة",
+            produced_qty: "الكمية المنتجة",
+            expense_claims: "مطالبات المصروفات",
+            pending_expenses: "مصروفات بانتظار الاعتماد",
+            claimed_expenses: "إجمالي المصروفات",
+            purchase_invoice_value: "قيمة فواتير الموردين",
+            approved_claims: "مطالبات معتمدة / مفوترة",
+            payment_entries: "سندات الدفع والتحصيل",
+            journal_entries: "القيود اليومية",
+            active_users: "مستخدمون نشطون",
+            employees: "الموظفون",
+            roles: "الأدوار والصلاحيات",
+            cost_centers: "مراكز التكلفة",
+            lead: "عميل محتمل",
+            opportunity: "فرصة",
+            quotation_step: "عرض سعر",
+            contract_step: "عقد",
+            project_step: "مشروع",
+            execution_step: "تنفيذ",
+            claim_step: "مطالبة",
+            invoice_step: "فاتورة",
+            collection_step: "تحصيل",
+            accounting_step: "محاسبة",
+            supplier_step: "مورد",
+            purchase_order_step: "أمر شراء",
+            receipt_step: "استلام",
+            stock_step: "مخزون",
+            bom_step: "قائمة مواد BOM",
+            work_order_step: "أمر تشغيل",
+            production_step: "إنتاج",
+            quality_step: "جودة",
+            expense_step: "مصروف",
+            approval_step: "اعتماد",
+            posting_step: "ترحيل",
+            statements: "كشوف الحساب",
+            accounts_payable: "حسابات الموردين",
+            journal_entry: "قيد يومية",
+            users: "المستخدمون",
+            employees_list: "قائمة الموظفين",
+            roles_list: "الأدوار",
+            cost_centers_list: "مراكز التكلفة",
         },
         en: {
             version: "V5.5.25",
@@ -168,12 +265,250 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             open: "Open",
             status: "Status",
             unnamed: "Unnamed Project",
+            overview: "Overview",
+            module_search: "Search this section...",
+            recent_records: "Recent Records",
+            quick_actions: "Module Actions",
+            workflow: "Connected Workflow",
+            no_records: "No permitted records are available in this section yet.",
+            open_list: "Open Full List",
+            view_all: "View All",
+            amount: "Amount",
+            date: "Date",
+            document: "Document",
+            details: "Details",
+            billing: "Billing & Collections",
+            reports_print: "Reports & Print",
+            administration: "Administration & System",
+            sales_title: "Customers & Sales",
+            sales_subtitle: "Customer → quotation → approval → invoice",
+            contracts_title: "Contracts & Claims",
+            contracts_subtitle: "Contract value, stages and claims from one source of truth",
+            projects_title: "Project Command Center",
+            projects_subtitle: "Project, cost center, tasks and profitability in one view",
+            engineering_title: "Engineering & Execution",
+            engineering_subtitle: "Tasks, deadlines, team hours and execution follow-up",
+            purchasing_title: "Purchasing & Suppliers",
+            purchasing_subtitle: "Purchase request → order → receipt → supplier invoice",
+            inventory_title: "Inventory & Material Movement",
+            inventory_subtitle: "Items, warehouses, receipts, issues and transfers",
+            manufacturing_title: "Manufacturing & Trusses",
+            manufacturing_subtitle: "BOM → work order → production → quality → delivery",
+            expenses_title: "Expenses & Cost Control",
+            expenses_subtitle: "Record expenses and link them to projects and cost centers",
+            billing_title: "Claims, Billing & Collections",
+            billing_subtitle: "Claim → invoice → collection → outstanding balance",
+            accounting_title: "Finance & Accounting",
+            accounting_subtitle: "Journals, payments, balances and financial reports",
+            reports_title: "Reports & Print Center",
+            reports_subtitle: "Operational and financial reports for filtering, printing and export",
+            administration_title: "System & Permissions",
+            administration_subtitle: "Users, employees, roles and cost centers",
+            quotation_value: "Quotation Value",
+            active_contracts: "Active Contracts",
+            project_contract_value: "Project Contract Value",
+            open_projects: "Open Projects",
+            open_tasks: "Open Tasks",
+            overdue_tasks: "Overdue Tasks",
+            engineering_hours: "Team Hours This Month",
+            purchase_order_value: "Purchase Order Value",
+            payables: "Supplier Payables",
+            material_receipts: "Material Receipts",
+            open_work_orders: "Open Work Orders",
+            produced_qty: "Produced Quantity",
+            expense_claims: "Expense Claims",
+            pending_expenses: "Expenses Pending Approval",
+            claimed_expenses: "Claimed Expenses",
+            purchase_invoice_value: "Purchase Invoice Value",
+            approved_claims: "Approved / Invoiced Claims",
+            payment_entries: "Payment Entries",
+            journal_entries: "Journal Entries",
+            active_users: "Active Users",
+            employees: "Employees",
+            roles: "Roles & Permissions",
+            cost_centers: "Cost Centers",
+            lead: "Lead",
+            opportunity: "Opportunity",
+            quotation_step: "Quotation",
+            contract_step: "Contract",
+            project_step: "Project",
+            execution_step: "Execution",
+            claim_step: "Claim",
+            invoice_step: "Invoice",
+            collection_step: "Collection",
+            accounting_step: "Accounting",
+            supplier_step: "Supplier",
+            purchase_order_step: "Purchase Order",
+            receipt_step: "Receipt",
+            stock_step: "Stock",
+            bom_step: "BOM",
+            work_order_step: "Work Order",
+            production_step: "Production",
+            quality_step: "Quality",
+            expense_step: "Expense",
+            approval_step: "Approval",
+            posting_step: "Posting",
+            statements: "Statements",
+            accounts_payable: "Accounts Payable",
+            journal_entry: "Journal Entry",
+            users: "Users",
+            employees_list: "Employee List",
+            roles_list: "Roles",
+            cost_centers_list: "Cost Centers",
+        },
+    };
+
+    const moduleMeta = {
+        sales: {
+            title: "sales_title",
+            subtitle: "sales_subtitle",
+            icon: "users",
+            workflow: ["lead", "opportunity", "quotation_step", "invoice_step"],
+            actions: [
+                { key: "quotation", icon: "file-text", newDoc: "Quotation" },
+                { key: "customers", icon: "users", doctype: "Customer" },
+                { key: "quotations", icon: "file-text", doctype: "Quotation" },
+                { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
+            ],
+        },
+        contracts: {
+            title: "contracts_title",
+            subtitle: "contracts_subtitle",
+            icon: "file-contract",
+            workflow: ["quotation_step", "contract_step", "project_step", "claim_step"],
+            actions: [
+                { key: "contracts", icon: "file-contract", newDoc: "RONIX Contract" },
+                { key: "claims", icon: "request", newDoc: "RONIX Claim" },
+                { key: "contracts", icon: "file-contract", doctype: "RONIX Contract" },
+                { key: "collections", icon: "payment", doctype: "Payment Entry" },
+            ],
+        },
+        projects: {
+            title: "projects_title",
+            subtitle: "projects_subtitle",
+            icon: "folder-normal",
+            workflow: ["contract_step", "project_step", "execution_step", "accounting_step"],
+            actions: [
+                { key: "projects", icon: "folder-normal", newDoc: "Project" },
+                { key: "projects", icon: "folder-normal", doctype: "Project" },
+                { key: "tasks", icon: "task", doctype: "Task" },
+                { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
+            ],
+        },
+        engineering: {
+            title: "engineering_title",
+            subtitle: "engineering_subtitle",
+            icon: "organization",
+            workflow: ["project_step", "execution_step", "quality_step", "claim_step"],
+            actions: [
+                { key: "tasks", icon: "task", newDoc: "Task" },
+                { key: "tasks", icon: "task", doctype: "Task" },
+                { key: "timesheets", icon: "timer", doctype: "Timesheet" },
+                { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
+            ],
+        },
+        purchasing: {
+            title: "purchasing_title",
+            subtitle: "purchasing_subtitle",
+            icon: "shopping-cart",
+            workflow: ["supplier_step", "purchase_order_step", "receipt_step", "invoice_step"],
+            actions: [
+                { key: "purchase_orders", icon: "shopping-cart", newDoc: "Purchase Order" },
+                { key: "suppliers", icon: "users", doctype: "Supplier" },
+                { key: "purchase_orders", icon: "shopping-cart", doctype: "Purchase Order" },
+                { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
+            ],
+        },
+        inventory: {
+            title: "inventory_title",
+            subtitle: "inventory_subtitle",
+            icon: "stock",
+            workflow: ["receipt_step", "stock_step", "production_step", "execution_step"],
+            actions: [
+                { key: "stock_entries", icon: "stock", newDoc: "Stock Entry" },
+                { key: "items", icon: "tag", doctype: "Item" },
+                { key: "warehouses", icon: "stock", doctype: "Warehouse" },
+                { key: "stock_entries", icon: "stock", doctype: "Stock Entry" },
+            ],
+        },
+        manufacturing: {
+            title: "manufacturing_title",
+            subtitle: "manufacturing_subtitle",
+            icon: "organization",
+            workflow: ["bom_step", "work_order_step", "production_step", "quality_step"],
+            actions: [
+                { key: "work_orders", icon: "organization", newDoc: "Work Order" },
+                { key: "boms", icon: "file-text", doctype: "BOM" },
+                { key: "work_orders", icon: "organization", doctype: "Work Order" },
+                { key: "stock_entries", icon: "stock", doctype: "Stock Entry" },
+            ],
+        },
+        expenses: {
+            title: "expenses_title",
+            subtitle: "expenses_subtitle",
+            icon: "expense",
+            workflow: ["expense_step", "approval_step", "project_step", "posting_step"],
+            actions: [
+                { key: "expense_claims", icon: "expense", newDoc: "Expense Claim" },
+                { key: "expense_claims", icon: "expense", doctype: "Expense Claim" },
+                { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
+                { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
+            ],
+        },
+        billing: {
+            title: "billing_title",
+            subtitle: "billing_subtitle",
+            icon: "payment",
+            workflow: ["claim_step", "invoice_step", "collection_step", "accounting_step"],
+            actions: [
+                { key: "claims", icon: "request", newDoc: "RONIX Claim" },
+                { key: "claims", icon: "request", doctype: "RONIX Claim" },
+                { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
+                { key: "receivables", icon: "payment", report: "Accounts Receivable" },
+            ],
+        },
+        accounting: {
+            title: "accounting_title",
+            subtitle: "accounting_subtitle",
+            icon: "accounting",
+            workflow: ["invoice_step", "collection_step", "journal_entry", "statements"],
+            actions: [
+                { key: "journal_entry", icon: "accounting", newDoc: "Journal Entry" },
+                { key: "general_ledger", icon: "accounting", report: "General Ledger" },
+                { key: "receivables", icon: "payment", report: "Accounts Receivable" },
+                { key: "trial_balance", icon: "chart", report: "Trial Balance" },
+            ],
+        },
+        reports: {
+            title: "reports_title",
+            subtitle: "reports_subtitle",
+            icon: "chart",
+            workflow: ["project_step", "accounting_step", "statements", "reports"],
+            actions: [
+                { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
+                { key: "general_ledger", icon: "accounting", report: "General Ledger" },
+                { key: "receivables", icon: "payment", report: "Accounts Receivable" },
+                { key: "trial_balance", icon: "chart", report: "Trial Balance" },
+            ],
+        },
+        administration: {
+            title: "administration_title",
+            subtitle: "administration_subtitle",
+            icon: "setting-gear",
+            workflow: ["users", "roles", "employees", "cost_centers"],
+            actions: [
+                { key: "users", icon: "users", doctype: "User" },
+                { key: "employees_list", icon: "users", doctype: "Employee" },
+                { key: "roles_list", icon: "lock", doctype: "Role" },
+                { key: "cost_centers_list", icon: "organization", doctype: "Cost Center" },
+            ],
         },
     };
 
     const navGroups = [
         {
             key: "dashboard",
+            module: "dashboard",
             icon: "home",
             open: true,
             items: [
@@ -181,77 +516,76 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                 { key: "comprehensive_search", icon: "search", action: "focus-search" },
             ],
         },
-        {
-            key: "sales",
-            icon: "users",
-            items: [
-                { key: "customers", icon: "users", doctype: "Customer" },
-                { key: "quotations", icon: "file-text", doctype: "Quotation" },
-                { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
-            ],
-        },
-        {
-            key: "contracts",
-            icon: "file-contract",
-            items: [
-                { key: "contracts", icon: "file-contract", doctype: "RONIX Contract" },
-                { key: "claims", icon: "request", doctype: "RONIX Claim" },
-                { key: "collections", icon: "payment", doctype: "Payment Entry" },
-            ],
-        },
-        {
-            key: "projects_group",
-            icon: "folder-normal",
-            items: [
-                { key: "projects", icon: "folder-normal", doctype: "Project" },
-                { key: "tasks", icon: "task", doctype: "Task" },
-                { key: "timesheets", icon: "timer", doctype: "Timesheet" },
-                { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
-            ],
-        },
-        {
-            key: "engineering",
-            icon: "organization",
-            items: [
-                { key: "tasks", icon: "task", doctype: "Task" },
-                { key: "timesheets", icon: "timer", doctype: "Timesheet" },
-            ],
-        },
-        {
-            key: "purchasing",
-            icon: "shopping-cart",
-            items: [
-                { key: "suppliers", icon: "users", doctype: "Supplier" },
-                { key: "purchase_orders", icon: "shopping-cart", doctype: "Purchase Order" },
-                { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
-            ],
-        },
-        {
-            key: "inventory",
-            icon: "stock",
-            items: [
-                { key: "items", icon: "tag", doctype: "Item" },
-                { key: "warehouses", icon: "stock", doctype: "Warehouse" },
-                { key: "stock_entries", icon: "stock", doctype: "Stock Entry" },
-            ],
-        },
-        {
-            key: "manufacturing_group",
-            icon: "organization",
-            items: [
-                { key: "work_orders", icon: "organization", doctype: "Work Order" },
-                { key: "boms", icon: "file-text", doctype: "BOM" },
-            ],
-        },
-        {
-            key: "accounting",
-            icon: "accounting",
-            items: [
-                { key: "general_ledger", icon: "accounting", report: "General Ledger" },
-                { key: "receivables", icon: "payment", report: "Accounts Receivable" },
-                { key: "trial_balance", icon: "chart", report: "Trial Balance" },
-            ],
-        },
+        { key: "sales", module: "sales", icon: "users", items: [
+            { key: "overview", icon: "view", action: "module", module: "sales" },
+            { key: "customers", icon: "users", doctype: "Customer" },
+            { key: "quotations", icon: "file-text", doctype: "Quotation" },
+            { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
+        ]},
+        { key: "contracts", module: "contracts", icon: "file-contract", items: [
+            { key: "overview", icon: "view", action: "module", module: "contracts" },
+            { key: "contracts", icon: "file-contract", doctype: "RONIX Contract" },
+            { key: "claims", icon: "request", doctype: "RONIX Claim" },
+            { key: "collections", icon: "payment", doctype: "Payment Entry" },
+        ]},
+        { key: "projects_group", module: "projects", icon: "folder-normal", items: [
+            { key: "overview", icon: "view", action: "module", module: "projects" },
+            { key: "projects", icon: "folder-normal", doctype: "Project" },
+            { key: "tasks", icon: "task", doctype: "Task" },
+            { key: "timesheets", icon: "timer", doctype: "Timesheet" },
+            { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
+        ]},
+        { key: "engineering", module: "engineering", icon: "organization", items: [
+            { key: "overview", icon: "view", action: "module", module: "engineering" },
+            { key: "tasks", icon: "task", doctype: "Task" },
+            { key: "timesheets", icon: "timer", doctype: "Timesheet" },
+        ]},
+        { key: "purchasing", module: "purchasing", icon: "shopping-cart", items: [
+            { key: "overview", icon: "view", action: "module", module: "purchasing" },
+            { key: "suppliers", icon: "users", doctype: "Supplier" },
+            { key: "purchase_orders", icon: "shopping-cart", doctype: "Purchase Order" },
+            { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
+        ]},
+        { key: "inventory", module: "inventory", icon: "stock", items: [
+            { key: "overview", icon: "view", action: "module", module: "inventory" },
+            { key: "items", icon: "tag", doctype: "Item" },
+            { key: "warehouses", icon: "stock", doctype: "Warehouse" },
+            { key: "stock_entries", icon: "stock", doctype: "Stock Entry" },
+        ]},
+        { key: "manufacturing_group", module: "manufacturing", icon: "organization", items: [
+            { key: "overview", icon: "view", action: "module", module: "manufacturing" },
+            { key: "work_orders", icon: "organization", doctype: "Work Order" },
+            { key: "boms", icon: "file-text", doctype: "BOM" },
+        ]},
+        { key: "expenses", module: "expenses", icon: "expense", items: [
+            { key: "overview", icon: "view", action: "module", module: "expenses" },
+            { key: "expense_claims", icon: "expense", doctype: "Expense Claim" },
+            { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
+        ]},
+        { key: "billing", module: "billing", icon: "payment", items: [
+            { key: "overview", icon: "view", action: "module", module: "billing" },
+            { key: "claims", icon: "request", doctype: "RONIX Claim" },
+            { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
+            { key: "collections", icon: "payment", doctype: "Payment Entry" },
+        ]},
+        { key: "accounting", module: "accounting", icon: "accounting", items: [
+            { key: "overview", icon: "view", action: "module", module: "accounting" },
+            { key: "general_ledger", icon: "accounting", report: "General Ledger" },
+            { key: "receivables", icon: "payment", report: "Accounts Receivable" },
+            { key: "trial_balance", icon: "chart", report: "Trial Balance" },
+        ]},
+        { key: "reports_print", module: "reports", icon: "chart", items: [
+            { key: "overview", icon: "view", action: "module", module: "reports" },
+            { key: "profitability", icon: "chart", report: "RONIX Project Profitability" },
+            { key: "general_ledger", icon: "accounting", report: "General Ledger" },
+            { key: "trial_balance", icon: "chart", report: "Trial Balance" },
+        ]},
+        { key: "administration", module: "administration", icon: "setting-gear", items: [
+            { key: "overview", icon: "view", action: "module", module: "administration" },
+            { key: "users", icon: "users", doctype: "User" },
+            { key: "employees_list", icon: "users", doctype: "Employee" },
+            { key: "roles_list", icon: "lock", doctype: "Role" },
+        ]},
     ];
 
     function icon(name, size = "sm") {
@@ -271,9 +605,9 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number(value) || 0);
     }
 
-    function formatMoney(value) {
-        const currency = state.data?.currency || "EGP";
-        return `${currency} ${formatNumber(value)}`;
+    function formatMoney(value, currency) {
+        const activeCurrency = currency || state.moduleData?.[state.activeModule]?.currency || state.data?.currency || "EGP";
+        return `${activeCurrency} ${formatNumber(value)}`;
     }
 
     function countValue(key) {
@@ -285,8 +619,8 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         return navGroups
             .map(
                 (group) => `
-                    <details class="ronix-nav-group" ${group.open ? "open" : ""}>
-                        <summary>
+                    <details class="ronix-nav-group" data-group-module="${esc(group.module || "")}" ${group.open ? "open" : ""}>
+                        <summary data-module-summary="${esc(group.module || "")}">
                             <span class="ronix-nav-icon">${icon(group.icon)}</span>
                             <span data-i18n="${group.key}">${esc(t(group.key))}</span>
                             <span class="ronix-chevron">‹</span>
@@ -296,7 +630,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                                 .map(
                                     (item) => `
                                         <button class="ronix-nav-item ${item.action === "dashboard" ? "active" : ""}"
-                                            data-action="${esc(item.action || "open")}" data-doctype="${esc(item.doctype || "")}" data-report="${esc(item.report || "")}">
+                                            data-action="${esc(item.action || "open")}" data-module="${esc(item.module || "")}" data-doctype="${esc(item.doctype || "")}" data-report="${esc(item.report || "")}">
                                             <span>${icon(item.icon)}</span>
                                             <span data-i18n="${item.key}">${esc(t(item.key))}</span>
                                         </button>
@@ -352,6 +686,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                         <button class="ronix-refresh" title="${esc(t("refresh"))}" data-refresh>${icon("refresh")}</button>
                     </header>
 
+                    <div class="ronix-dashboard-view" data-dashboard-view>
                     <section class="ronix-title-panel">
                         <div>
                             <span class="ronix-eyebrow">${esc(t("version"))} Project 360 · Commercial Core · Integrated ERP</span>
@@ -411,6 +746,8 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                         <div class="ronix-project-state" data-loading-state>${icon("refresh")} <span data-i18n="loading">${esc(t("loading"))}</span></div>
                         <div class="ronix-project-grid" data-project-grid hidden></div>
                     </section>
+                    </div>
+                    <section class="ronix-module-view" data-module-view hidden></section>
                 </main>
             </div>
         `);
@@ -419,6 +756,16 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
     function statusLabel(status) {
         const map = {
             Open: state.lang === "ar" ? "نشط" : "Open",
+            Active: state.lang === "ar" ? "نشط" : "Active",
+            Draft: state.lang === "ar" ? "مسودة" : "Draft",
+            Submitted: state.lang === "ar" ? "معتمد" : "Submitted",
+            Signed: state.lang === "ar" ? "موقّع" : "Signed",
+            Approved: state.lang === "ar" ? "معتمد" : "Approved",
+            Invoiced: state.lang === "ar" ? "تمت الفوترة" : "Invoiced",
+            "Pending Approval": state.lang === "ar" ? "بانتظار الاعتماد" : "Pending Approval",
+            "Not Collected": state.lang === "ar" ? "غير محصل" : "Not Collected",
+            Closed: state.lang === "ar" ? "مغلق" : "Closed",
+            Stopped: state.lang === "ar" ? "متوقف" : "Stopped",
             Completed: state.lang === "ar" ? "مكتمل" : "Completed",
             Cancelled: state.lang === "ar" ? "ملغي" : "Cancelled",
             Overdue: state.lang === "ar" ? "متأخر" : "Overdue",
@@ -469,6 +816,158 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         );
     }
 
+    function actionMarkup(action) {
+        const attributes = action.newDoc
+            ? `data-new="${esc(action.newDoc)}"`
+            : action.report
+              ? `data-route-report="${esc(action.report)}"`
+              : `data-doctype="${esc(action.doctype || "")}"`;
+        return `
+            <button class="ronix-action-card" ${attributes}>
+                <span class="ronix-action-icon">${icon(action.icon || "right")}</span>
+                <span><strong>${esc(t(action.key))}</strong><small>${esc(action.newDoc ? t("quick_add") : t("open_list"))}</small></span>
+                ${icon(state.lang === "ar" ? "left" : "right")}
+            </button>
+        `;
+    }
+
+    function renderModuleView(moduleKey, filter = "") {
+        const host = $(page.body).find("[data-module-view]");
+        const meta = moduleMeta[moduleKey];
+        const data = state.moduleData[moduleKey];
+        if (!meta) return;
+        if (!data) {
+            host.html(`<div class="ronix-module-loading">${icon("refresh", "md")}<span>${esc(t("loading"))}</span></div>`);
+            return;
+        }
+
+        const needle = String(filter || "").trim().toLowerCase();
+        const records = (data.recent || []).filter((row) => {
+            const haystack = [row.name, row.title, row.subtitle, row.status, row.doctype].join(" ").toLowerCase();
+            return !needle || haystack.includes(needle);
+        });
+        const cards = (data.cards || [])
+            .map(
+                (card, index) => `
+                    <button class="ronix-module-kpi tone-${(index % 4) + 1}" data-doctype="${esc(card.doctype || "")}">
+                        <span>${esc(t(card.key))}</span>
+                        <strong>${card.kind === "money" ? esc(formatMoney(card.value, data.currency)) : esc(formatNumber(card.value))}</strong>
+                        <small>${esc(t(card.kind === "money" ? "amount" : "live_data"))}</small>
+                    </button>
+                `
+            )
+            .join("");
+        const workflow = (meta.workflow || [])
+            .map(
+                (step, index) => `
+                    <span class="ronix-flow-step"><b>${formatNumber(index + 1)}</b>${esc(t(step))}</span>
+                    ${index < meta.workflow.length - 1 ? `<i>${icon(state.lang === "ar" ? "left" : "right")}</i>` : ""}
+                `
+            )
+            .join("");
+        const rows = records.length
+            ? records
+                  .map(
+                      (row) => `
+                        <button class="ronix-record-row" data-form-doctype="${esc(row.doctype)}" data-form-name="${esc(row.name)}">
+                            <span class="ronix-record-doc"><b>${esc(row.title || row.name)}</b><small>${esc(row.subtitle || row.doctype)}</small></span>
+                            <span class="ronix-record-type">${esc(row.doctype)}</span>
+                            <span class="ronix-record-date">${esc(row.date || "—")}</span>
+                            <span class="ronix-record-amount">${row.amount === null || row.amount === undefined ? "—" : esc(formatMoney(row.amount, row.currency || data.currency))}</span>
+                            <span class="ronix-record-status">${esc(statusLabel(row.status))}</span>
+                            <span class="ronix-record-open">${icon(state.lang === "ar" ? "left" : "right")}</span>
+                        </button>
+                    `
+                  )
+                  .join("")
+            : `<div class="ronix-module-empty">${icon(meta.icon, "md")}<p>${esc(t("no_records"))}</p></div>`;
+
+        host.html(`
+            <header class="ronix-module-header">
+                <div class="ronix-module-heading">
+                    <span class="ronix-module-heading-icon">${icon(meta.icon, "md")}</span>
+                    <div><small>${esc(t("source"))}</small><h1>${esc(t(meta.title))}</h1><p>${esc(t(meta.subtitle))}</p></div>
+                </div>
+                <button class="ronix-back-dashboard" data-show-dashboard>${icon("home")} <span>${esc(t("main_dashboard"))}</span></button>
+            </header>
+            <section class="ronix-flow-card">
+                <header><strong>${esc(t("workflow"))}</strong><small>${esc(t("source"))}</small></header>
+                <div>${workflow}</div>
+            </section>
+            <section class="ronix-module-kpis">${cards}</section>
+            <div class="ronix-module-layout">
+                <section class="ronix-records-panel">
+                    <header><div><span>${esc(t("recent_records"))}</span><small>${esc(t(meta.subtitle))}</small></div><b>${formatNumber(records.length)}</b></header>
+                    <div class="ronix-record-head"><span>${esc(t("document"))}</span><span>${esc(t("details"))}</span><span>${esc(t("date"))}</span><span>${esc(t("amount"))}</span><span>${esc(t("status"))}</span><span></span></div>
+                    <div class="ronix-record-list">${rows}</div>
+                </section>
+                <aside class="ronix-actions-panel">
+                    <header><strong>${esc(t("quick_actions"))}</strong><small>${esc(t(meta.title))}</small></header>
+                    <div>${(meta.actions || []).map(actionMarkup).join("")}</div>
+                </aside>
+            </div>
+        `);
+    }
+
+    function setActiveNavigation(moduleKey) {
+        const root = $(page.body);
+        root.find(".ronix-nav-item").removeClass("active");
+        if (moduleKey === "dashboard") {
+            root.find('.ronix-nav-item[data-action="dashboard"]').addClass("active");
+            return;
+        }
+        root.find(`.ronix-nav-item[data-action="module"][data-module="${moduleKey}"]`).addClass("active");
+        const group = root.find(`.ronix-nav-group[data-group-module="${moduleKey}"]`);
+        if (group.length) group.prop("open", true);
+    }
+
+    function showDashboard() {
+        const root = $(page.body);
+        state.activeModule = "dashboard";
+        root.find("[data-module-view]").prop("hidden", true);
+        root.find("[data-dashboard-view]").prop("hidden", false);
+        root.find("[data-project-search]").attr("placeholder", t("search")).val("");
+        setActiveNavigation("dashboard");
+        renderProjects();
+        root.find(".ronix-main")[0]?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function showModule(moduleKey, force = false) {
+        if (!moduleMeta[moduleKey]) return;
+        const root = $(page.body);
+        state.activeModule = moduleKey;
+        root.find("[data-dashboard-view]").prop("hidden", true);
+        root.find("[data-module-view]").prop("hidden", false);
+        root.find("[data-project-search]").attr("placeholder", t("module_search")).val("");
+        setActiveNavigation(moduleKey);
+        renderModuleView(moduleKey);
+        root.find(".ronix-main")[0]?.scrollTo({ top: 0, behavior: "smooth" });
+        if (force || !state.moduleData[moduleKey]) loadModuleData(moduleKey, force);
+    }
+
+    function loadModuleData(moduleKey, showMessage = false) {
+        if (!moduleMeta[moduleKey] || state.moduleLoading) return;
+        state.moduleLoading = true;
+        const root = $(page.body);
+        root.find("[data-refresh]").addClass("is-loading");
+        frappe
+            .call("ronix_erp.api.get_module_dashboard", { module_name: moduleKey })
+            .then(({ message }) => {
+                state.moduleData[moduleKey] = message || {};
+                if (state.activeModule === moduleKey) renderModuleView(moduleKey);
+                if (showMessage) frappe.show_alert({ message: t("refreshed"), indicator: "green" });
+            })
+            .catch(() => {
+                if (state.activeModule === moduleKey) {
+                    root.find("[data-module-view]").html(`<div class="ronix-module-loading error">${icon("error")}<span>${esc(t("load_error"))}</span></div>`);
+                }
+            })
+            .always(() => {
+                state.moduleLoading = false;
+                root.find("[data-refresh]").removeClass("is-loading");
+            });
+    }
+
     function applyData(data) {
         state.data = data || {};
         const root = $(page.body);
@@ -496,8 +995,12 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             $(this).text(t(key));
         });
         root.find("[data-language]").text(state.lang === "ar" ? "EN ◉" : "عربي ◉");
-        root.find("[data-project-search]").attr("placeholder", t("search"));
-        renderProjects(root.find("[data-project-search]").val() || "");
+        root.find("[data-project-search]").attr("placeholder", t(state.activeModule === "dashboard" ? "search" : "module_search"));
+        if (state.activeModule === "dashboard") {
+            renderProjects(root.find("[data-project-search]").val() || "");
+        } else {
+            renderModuleView(state.activeModule, root.find("[data-project-search]").val() || "");
+        }
     }
 
     function openList(doctype) {
@@ -526,23 +1029,40 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                 return;
             }
             if (action === "dashboard") {
-                root.find(".ronix-main")[0]?.scrollTo({ top: 0, behavior: "smooth" });
+                showDashboard();
+                return;
+            }
+            if (action === "module") {
+                showModule($(this).data("module"));
                 return;
             }
             if ($(this).data("doctype")) openList($(this).data("doctype"));
             if ($(this).data("report")) openReport($(this).data("report"));
         });
+        root.on("click", "[data-module-summary]", function () {
+            const moduleKey = $(this).data("module-summary");
+            if (moduleKey === "dashboard") showDashboard();
+            else if (moduleMeta[moduleKey]) showModule(moduleKey);
+        });
+        root.on("click", "[data-show-dashboard]", showDashboard);
         root.on("click", "[data-language]", function () {
             state.lang = state.lang === "ar" ? "en" : "ar";
             translate();
         });
         root.on("input", "[data-project-search]", function () {
-            renderProjects($(this).val());
+            if (state.activeModule === "dashboard") renderProjects($(this).val());
+            else renderModuleView(state.activeModule, $(this).val());
         });
         root.on("click", "[data-project]", function () {
             frappe.set_route("Form", "Project", $(this).data("project"));
         });
-        root.on("click", "[data-refresh]", () => loadData(true));
+        root.on("click", "[data-form-doctype]", function () {
+            frappe.set_route("Form", $(this).data("form-doctype"), $(this).data("form-name"));
+        });
+        root.on("click", "[data-refresh]", () => {
+            if (state.activeModule === "dashboard") loadData(true);
+            else loadModuleData(state.activeModule, true);
+        });
     }
 
     function loadData(showMessage = false) {
@@ -604,11 +1124,17 @@ function injectStyles() {
         .ronix-title-panel{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px;border:1px solid #d5e1eb;border-radius:17px;background:#fff;box-shadow:0 6px 20px rgba(12,49,85,.035)}.ronix-eyebrow{display:inline-block;margin-bottom:5px;padding:3px 8px;border-radius:6px;background:#0c3c61;color:#fff;font-size:8px;font-weight:800}.ronix-title-panel h1{margin:0;color:#082f50;font-size:22px;font-weight:800}.ronix-title-panel p{margin:3px 0 0;color:#6d8194;font-size:9px}.ronix-title-actions{display:flex;gap:8px}.ronix-title-actions button{padding:10px 14px;border:0;border-radius:8px;background:#147bbe;color:#fff;font-size:11px;font-weight:800;cursor:pointer}.ronix-title-actions button.secondary{border:1px solid #c7d8e6;background:#fff;color:#163b58}
         .ronix-kpi-grid{display:grid;grid-template-columns:1.35fr repeat(4,minmax(145px,1fr));gap:10px;margin:12px 0}.ronix-kpi-grid article{min-height:101px;border:1px solid #d7e3ec;border-radius:14px;background:#fff}.ronix-today-card{padding:17px 18px;background:linear-gradient(135deg,#0b3455,#0d4169)!important;color:#fff}.ronix-today-card h2{margin:0 0 4px;color:#fff;font-size:16px}.ronix-today-card p{margin:0 0 13px;color:#cfe0ec;font-size:8px}.ronix-today-card div{display:flex;gap:6px;flex-wrap:wrap}.ronix-today-card button{padding:6px 9px;border:1px solid rgba(255,255,255,.3);border-radius:7px;background:rgba(255,255,255,.06);color:#fff;font-size:9px;font-weight:700;cursor:pointer}.ronix-kpi{position:relative;padding:18px 16px;border-top:3px solid var(--accent)!important}.ronix-kpi.red{--accent:var(--red)}.ronix-kpi.gold{--accent:var(--gold)}.ronix-kpi.green{--accent:var(--green)}.ronix-kpi.blue{--accent:var(--blue)}.ronix-kpi span,.ronix-kpi small,.ronix-kpi strong{display:block}.ronix-kpi span{color:#526b80;font-size:9px;font-weight:700}.ronix-kpi strong{margin:11px 0 6px;color:#07375d;font-size:17px;font-weight:850;white-space:nowrap}.ronix-kpi small{color:#8092a2;font-size:8px}.ronix-kpi small b{display:inline}
         .ronix-portfolio{padding:15px;border:1px solid #d4e1eb;border-radius:18px;background:#fff}.ronix-portfolio-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}.ronix-portfolio-head span{color:#b27c18;font-size:10px;font-weight:800}.ronix-portfolio-head h2{margin:2px 0;color:#0a3153;font-size:19px}.ronix-portfolio-head p{margin:0;color:#728698;font-size:9px}.ronix-portfolio-head button{display:flex;align-items:center;gap:6px;padding:9px 12px;border:1px solid #cadbe8;border-radius:9px;background:#fff;color:#143b5b;font-size:10px;font-weight:750;cursor:pointer}.ronix-portfolio-head button svg{width:14px}.ronix-portfolio-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.ronix-portfolio-totals article{padding:11px 13px;border:1px solid #dbe6ee;border-radius:10px;background:#f8fbfd;text-align:center}.ronix-portfolio-totals span,.ronix-portfolio-totals strong{display:block}.ronix-portfolio-totals span{color:#74899b;font-size:8px}.ronix-portfolio-totals strong{margin-top:5px;color:#07395f;font-size:13px;white-space:nowrap}.ronix-project-state{display:flex;align-items:center;justify-content:center;gap:8px;min-height:170px;color:#70879a;font-size:12px}.ronix-project-state svg{animation:ronix-spin 1s linear infinite}.ronix-project-state.error{color:#c62f43}.ronix-project-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ronix-project-card{display:flex;flex-direction:column;min-height:190px;padding:13px;border:1px solid #d8e4ec;border-radius:13px;background:#fff;color:#0d3453;text-align:start;cursor:pointer;transition:.16s}.ronix-project-card:hover{transform:translateY(-2px);border-color:#b98a34;box-shadow:0 12px 26px rgba(10,49,83,.09)}.ronix-project-card header{display:flex;justify-content:space-between;gap:10px}.ronix-project-card header>div:first-child{min-width:0}.ronix-project-card header span{color:#b07a1d;font-size:8px;font-weight:800}.ronix-project-card h3{margin:4px 0 2px;overflow:hidden;color:#0c3353;font-size:11px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}.ronix-project-card header small{color:#788b9b;font-size:8px}.ronix-status{text-align:end}.ronix-status span{display:block;color:#4d6a7e!important}.ronix-status b{font-size:9px}.ronix-progress{height:4px;margin:10px 0;border-radius:99px;background:#edf2f5;overflow:hidden}.ronix-progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#d0a03d,#1478b9)}.ronix-project-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 6px;margin-top:2px}.ronix-project-metrics small,.ronix-project-metrics b{display:block}.ronix-project-metrics small{color:#7c90a1;font-size:7px}.ronix-project-metrics b{margin-top:2px;color:#143a58;font-size:8px;white-space:nowrap}.ronix-project-metrics .positive b{color:#168352}.ronix-project-metrics .negative b{color:#cf3247}.ronix-project-card footer{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;color:#60798c;font-size:8px}.ronix-project-card footer span:last-child{display:flex;align-items:center;gap:4px;color:#176fa9;font-weight:800}.ronix-project-card footer svg{width:12px}.ronix-empty{grid-column:1/-1;display:grid;place-items:center;min-height:190px;color:#7890a1}.ronix-empty svg{width:30px;height:30px}.ronix-empty p{margin:8px 0 0}
-        .ronix-erp[dir="ltr"] .ronix-nav-item,.ronix-erp[dir="ltr"] .ronix-core-card button,.ronix-erp[dir="ltr"] .ronix-project-card{text-align:left}.ronix-erp[dir="rtl"] .ronix-nav-item,.ronix-erp[dir="rtl"] .ronix-core-card button,.ronix-erp[dir="rtl"] .ronix-project-card{text-align:right}
+        .ronix-dashboard-view[hidden],.ronix-module-view[hidden]{display:none!important}.ronix-module-view{display:block}.ronix-module-loading{display:flex;align-items:center;justify-content:center;gap:10px;min-height:420px;border:1px solid #d6e2eb;border-radius:18px;background:#fff;color:#6f8598;font-size:13px}.ronix-module-loading svg{animation:ronix-spin 1s linear infinite}.ronix-module-loading.error{color:#c92f45}
+        .ronix-module-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border:1px solid #d5e1eb;border-radius:17px;background:#fff;box-shadow:0 6px 20px rgba(12,49,85,.035)}.ronix-module-heading{display:flex;align-items:center;gap:14px}.ronix-module-heading-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#0d426c,#167fbd);color:#fff;box-shadow:0 10px 22px rgba(16,104,161,.2)}.ronix-module-heading-icon svg{width:24px;height:24px}.ronix-module-heading small{display:block;color:#ad771c;font-size:9px;font-weight:800}.ronix-module-heading h1{margin:2px 0;color:#092f4f;font-size:22px}.ronix-module-heading p{margin:0;color:#6d8194;font-size:10px}.ronix-back-dashboard{display:flex;align-items:center;gap:7px;padding:10px 13px;border:1px solid #cad9e4;border-radius:9px;background:#fff;color:#133b5b;font-size:10px;font-weight:800;cursor:pointer}.ronix-back-dashboard svg{width:14px}
+        .ronix-flow-card{margin:12px 0;padding:13px 16px;border:1px solid #d7e3ec;border-radius:14px;background:linear-gradient(135deg,#fff,#f7fafc)}.ronix-flow-card header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.ronix-flow-card header strong{color:#0b385b;font-size:11px}.ronix-flow-card header small{color:#9a711e;font-size:8px;font-weight:800}.ronix-flow-card>div{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}.ronix-flow-step{display:flex;align-items:center;gap:7px;min-width:120px;padding:9px 11px;border:1px solid #d7e3eb;border-radius:10px;background:#fff;color:#183f5d;font-size:10px;font-weight:750}.ronix-flow-step b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#0f5686;color:#fff;font-size:8px}.ronix-flow-card i{display:grid;place-items:center;color:#a57a26}.ronix-flow-card i svg{width:14px}
+        .ronix-module-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.ronix-module-kpi{position:relative;min-height:105px;padding:16px;border:1px solid #d7e3ec;border-top:3px solid var(--tone);border-radius:14px;background:#fff;text-align:start;cursor:pointer;transition:.16s}.ronix-module-kpi:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(10,49,83,.07)}.ronix-module-kpi.tone-1{--tone:#187fbd}.ronix-module-kpi.tone-2{--tone:#169561}.ronix-module-kpi.tone-3{--tone:#c38b25}.ronix-module-kpi.tone-4{--tone:#df3550}.ronix-module-kpi span,.ronix-module-kpi strong,.ronix-module-kpi small{display:block}.ronix-module-kpi span{color:#5f7588;font-size:9px;font-weight:750}.ronix-module-kpi strong{margin:12px 0 7px;color:#07375d;font-size:19px;white-space:nowrap}.ronix-module-kpi small{color:#8a9ba8;font-size:8px}
+        .ronix-module-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(230px,.55fr);gap:12px;align-items:start}.ronix-records-panel,.ronix-actions-panel{border:1px solid #d5e1ea;border-radius:16px;background:#fff;overflow:hidden}.ronix-records-panel>header,.ronix-actions-panel>header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e4ebf1}.ronix-records-panel>header span,.ronix-actions-panel>header strong{display:block;color:#0a3455;font-size:13px;font-weight:850}.ronix-records-panel>header small,.ronix-actions-panel>header small{display:block;margin-top:2px;color:#7c8f9f;font-size:8px}.ronix-records-panel>header b{display:grid;place-items:center;min-width:28px;height:25px;border-radius:999px;background:#e9f3f9;color:#0e6398;font-size:9px}.ronix-record-head,.ronix-record-row{display:grid;grid-template-columns:minmax(170px,1.5fr) minmax(95px,.7fr) 92px 105px 95px 22px;gap:9px;align-items:center}.ronix-record-head{padding:9px 14px;background:#f7fafc;color:#75899a;font-size:8px;font-weight:800}.ronix-record-row{width:100%;padding:11px 14px;border:0;border-top:1px solid #edf2f6;background:#fff;color:#153b58;text-align:start;cursor:pointer}.ronix-record-row:hover{background:#f7fbfe}.ronix-record-doc b,.ronix-record-doc small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ronix-record-doc b{font-size:10px}.ronix-record-doc small{margin-top:3px;color:#7a8e9e;font-size:8px}.ronix-record-type,.ronix-record-date,.ronix-record-amount{font-size:8px}.ronix-record-amount{font-weight:800}.ronix-record-status{justify-self:start;padding:4px 7px;border-radius:999px;background:#e9f5ee;color:#188053;font-size:8px;font-weight:800}.ronix-record-open{color:#1c79ae}.ronix-record-open svg{width:12px}.ronix-module-empty{display:grid;place-items:center;min-height:250px;color:#7890a1}.ronix-module-empty svg{width:30px}.ronix-module-empty p{margin:8px 0 0}
+        .ronix-actions-panel>div{display:grid;gap:8px;padding:12px}.ronix-action-card{display:grid;grid-template-columns:38px 1fr 15px;align-items:center;gap:10px;width:100%;padding:11px;border:1px solid #dbe5ec;border-radius:11px;background:#fff;color:#143a58;text-align:start;cursor:pointer}.ronix-action-card:hover{border-color:#9fc7df;background:#f7fbfd}.ronix-action-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;background:#e9f3f9;color:#126da4}.ronix-action-icon svg{width:17px}.ronix-action-card strong,.ronix-action-card small{display:block}.ronix-action-card strong{font-size:10px}.ronix-action-card small{margin-top:2px;color:#7a8d9c;font-size:8px}.ronix-action-card>svg{width:12px;color:#aa7b27}
+        .ronix-erp[dir="ltr"] .ronix-nav-item,.ronix-erp[dir="ltr"] .ronix-core-card button,.ronix-erp[dir="ltr"] .ronix-project-card,.ronix-erp[dir="ltr"] .ronix-module-kpi,.ronix-erp[dir="ltr"] .ronix-record-row,.ronix-erp[dir="ltr"] .ronix-action-card{text-align:left}.ronix-erp[dir="rtl"] .ronix-nav-item,.ronix-erp[dir="rtl"] .ronix-core-card button,.ronix-erp[dir="rtl"] .ronix-project-card,.ronix-erp[dir="rtl"] .ronix-module-kpi,.ronix-erp[dir="rtl"] .ronix-record-row,.ronix-erp[dir="rtl"] .ronix-action-card{text-align:right}
         @keyframes ronix-spin{to{transform:rotate(360deg)}}
-        @media(max-width:1250px){.ronix-kpi-grid{grid-template-columns:repeat(4,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:900px){.ronix-erp,.ronix-erp[dir="ltr"]{grid-template-columns:1fr;grid-template-areas:"main";height:auto;min-height:100vh;overflow:visible}.ronix-sidebar{display:none}.ronix-main{overflow:visible;padding:10px}.ronix-toolbar{grid-template-columns:1fr auto}.ronix-search-wrap{grid-column:1/-1;grid-row:2}.ronix-title-panel{align-items:flex-start;flex-direction:column}.ronix-kpi-grid{grid-template-columns:repeat(2,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-portfolio-totals{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:580px){.ronix-toolbar-actions{flex-wrap:wrap}.ronix-currency{display:none}.ronix-title-actions{width:100%;flex-direction:column}.ronix-title-actions button{width:100%}.ronix-kpi-grid{grid-template-columns:1fr}.ronix-kpi-grid article{min-height:auto}.ronix-today-card{grid-column:auto}.ronix-portfolio-head{align-items:flex-start;flex-direction:column}.ronix-project-grid{grid-template-columns:1fr}.ronix-project-metrics{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:1250px){.ronix-kpi-grid{grid-template-columns:repeat(4,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ronix-module-layout{grid-template-columns:1fr}.ronix-actions-panel>div{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:900px){.ronix-erp,.ronix-erp[dir="ltr"]{grid-template-columns:1fr;grid-template-areas:"main";height:auto;min-height:100vh;overflow:visible}.ronix-sidebar{display:none}.ronix-main{overflow:visible;padding:10px}.ronix-toolbar{grid-template-columns:1fr auto}.ronix-search-wrap{grid-column:1/-1;grid-row:2}.ronix-title-panel,.ronix-module-header{align-items:flex-start;flex-direction:column}.ronix-kpi-grid,.ronix-module-kpis{grid-template-columns:repeat(2,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-portfolio-totals{grid-template-columns:repeat(2,1fr)}.ronix-record-head{display:none}.ronix-record-row{grid-template-columns:minmax(160px,1fr) auto auto}.ronix-record-type,.ronix-record-date{display:none}}
+        @media(max-width:580px){.ronix-toolbar-actions{flex-wrap:wrap}.ronix-currency{display:none}.ronix-title-actions{width:100%;flex-direction:column}.ronix-title-actions button{width:100%}.ronix-kpi-grid,.ronix-module-kpis{grid-template-columns:1fr}.ronix-kpi-grid article{min-height:auto}.ronix-today-card{grid-column:auto}.ronix-portfolio-head{align-items:flex-start;flex-direction:column}.ronix-project-grid{grid-template-columns:1fr}.ronix-project-metrics{grid-template-columns:repeat(2,1fr)}.ronix-module-heading{align-items:flex-start}.ronix-flow-card>div{align-items:stretch;flex-direction:column}.ronix-flow-card i{transform:rotate(-90deg)}.ronix-actions-panel>div{grid-template-columns:1fr}.ronix-record-row{grid-template-columns:minmax(130px,1fr) auto 18px}.ronix-record-status{display:none}}
     `;
     document.head.appendChild(style);
 }
