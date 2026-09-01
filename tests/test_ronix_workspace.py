@@ -63,7 +63,7 @@ class TestRonixWorkspace(unittest.TestCase):
         api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
 
         for required in (
-            "V5.5.26",
+            "V5.5.27",
             "ملخص اليوم",
             "محفظة المشروعات والربحية",
             "إضافة سريعة",
@@ -71,5 +71,6 @@ class TestRonixWorkspace(unittest.TestCase):
             "@media(max-width:900px)",
         ):
             self.assertIn(required, source)
+        self.assertIn('event.preventDefault();', source)
         self.assertIn("get_dashboard_data", api)
         self.assertIn("RONIX Project Profitability", source)
