@@ -22,6 +22,180 @@ def get_workspace_summary():
     }
 
 
+@frappe.whitelist()
+def get_dashboard_data():
+    """Return live, permission-aware data for the RONIX HTML dashboard."""
+    from frappe.utils import get_first_day, nowdate
+
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please sign in to open RONIX ERP."), frappe.PermissionError)
+
+    company = frappe.defaults.get_user_default("Company")
+    if not company and frappe.has_permission("Company", ptype="read"):
+        companies = frappe.get_list(
+            "Company", fields=["name"], order_by="is_group asc, modified desc", page_length=1
+        )
+        company = companies[0].name if companies else None
+    currency = (
+        frappe.get_cached_value("Company", company, "default_currency")
+        if company
+        else "EGP"
+    ) or "EGP"
+
+    financial_rows = _get_dashboard_financial_rows(company)
+    financial_by_project = {row.get("project"): row for row in financial_rows}
+    projects = _get_dashboard_projects(company, financial_by_project)
+    hours_by_project = _get_project_hours([row["name"] for row in projects])
+    for row in projects:
+        row["hours"] = flt(hours_by_project.get(row["name"]))
+
+    open_invoices = _get_open_invoices(company)
+    today = nowdate()
+    overdue_invoices = [
+        row for row in open_invoices if row.get("due_date") and str(row.due_date) < today
+    ]
+    quotation_followup = _permitted_count(
+        "Quotation",
+        {
+            "docstatus": ["<", 2],
+            "status": ["in", ["Draft", "Open", "Replied"]],
+        },
+    )
+    portfolio = {
+        "contract_value": sum(flt(row.get("contract_value")) for row in projects),
+        "outstanding_amount": sum(flt(row.get("outstanding_amount")) for row in projects),
+        "actual_cost": sum(flt(row.get("actual_cost")) for row in projects),
+        "expected_profit": sum(flt(row.get("expected_profit")) for row in projects),
+        "hours": sum(flt(row.get("hours")) for row in projects),
+    }
+    return {
+        "company": company,
+        "currency": currency,
+        "summary": {
+            "open_receivables": sum(
+                flt(row.outstanding_amount) * (flt(row.conversion_rate) or 1)
+                for row in open_invoices
+            ),
+            "open_invoice_count": len(open_invoices),
+            "overdue_receivables": sum(
+                flt(row.outstanding_amount) * (flt(row.conversion_rate) or 1)
+                for row in overdue_invoices
+            ),
+            "overdue_invoice_count": len(overdue_invoices),
+            "collected_this_month": _get_collected_this_month(company),
+            "quotation_followup": quotation_followup or 0,
+            "month_label": str(get_first_day(today))[:7],
+        },
+        "portfolio": portfolio,
+        "projects": projects,
+    }
+
+
+def _get_dashboard_financial_rows(company):
+    if not company or not frappe.has_permission("Project", ptype="read"):
+        return []
+    try:
+        from ronix_erp.ronix_erp.report.ronix_project_profitability.ronix_project_profitability import (
+            execute as profitability_execute,
+        )
+
+        return profitability_execute({"company": company})[1]
+    except (frappe.PermissionError, frappe.DoesNotExistError):
+        return []
+
+
+def _get_dashboard_projects(company, financial_by_project):
+    if not company or not frappe.has_permission("Project", ptype="read"):
+        return []
+    rows = frappe.get_list(
+        "Project",
+        filters={"company": company},
+        fields=[
+            "name",
+            "project_name",
+            "status",
+            "percent_complete",
+            "customer",
+            "ronix_contract",
+        ],
+        order_by="modified desc",
+        page_length=12,
+    )
+    projects = []
+    for row in rows:
+        financial = financial_by_project.get(row.name, {})
+        contract_value = flt(financial.get("contract_value"))
+        actual_cost = flt(financial.get("actual_cost"))
+        projects.append(
+            {
+                "name": row.name,
+                "code": row.name,
+                "project_name": row.project_name,
+                "status": row.status,
+                "progress": flt(row.percent_complete),
+                "customer": row.customer,
+                "contract": row.ronix_contract,
+                "contract_value": contract_value,
+                "outstanding_amount": flt(financial.get("outstanding_amount")),
+                "actual_cost": actual_cost,
+                "expected_profit": contract_value - actual_cost,
+            }
+        )
+    return projects
+
+
+def _get_open_invoices(company):
+    if not company or not frappe.has_permission("Sales Invoice", ptype="read"):
+        return []
+    return frappe.get_list(
+        "Sales Invoice",
+        filters={
+            "company": company,
+            "docstatus": 1,
+            "outstanding_amount": [">", 0],
+        },
+        fields=["name", "due_date", "outstanding_amount", "conversion_rate"],
+        page_length=100000,
+    )
+
+
+def _get_collected_this_month(company):
+    from frappe.utils import get_first_day, nowdate
+
+    if not company or not frappe.has_permission("Payment Entry", ptype="read"):
+        return 0
+    rows = frappe.get_list(
+        "Payment Entry",
+        filters={
+            "company": company,
+            "docstatus": 1,
+            "payment_type": "Receive",
+            "posting_date": ["between", [get_first_day(nowdate()), nowdate()]],
+        },
+        fields=["base_received_amount"],
+        page_length=100000,
+    )
+    return sum(flt(row.base_received_amount) for row in rows)
+
+
+def _get_project_hours(project_names):
+    if not project_names or not frappe.has_permission("Timesheet", ptype="read"):
+        return {}
+    rows = frappe.db.sql(
+        """
+        SELECT detail.project, COALESCE(SUM(detail.hours), 0) AS hours
+          FROM `tabTimesheet Detail` detail
+          JOIN `tabTimesheet` timesheet ON timesheet.name = detail.parent
+         WHERE timesheet.docstatus = 1
+           AND detail.project IN %(projects)s
+         GROUP BY detail.project
+        """,
+        {"projects": tuple(project_names)},
+        as_dict=True,
+    )
+    return {row.project: row.hours for row in rows}
+
+
 def _permitted_count(doctype, filters=None):
     if not frappe.has_permission(doctype, ptype="read"):
         return None

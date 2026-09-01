@@ -50,3 +50,26 @@ class TestRonixWorkspace(unittest.TestCase):
             "RONIX%20Project%20Profitability",
         ):
             self.assertIn(required, source)
+
+    def test_workspace_uses_professional_html_shell_and_live_data(self):
+        source = (
+            ROOT
+            / "ronix_erp"
+            / "ronix_erp"
+            / "page"
+            / "ronix_erp_dashboard"
+            / "ronix_erp_dashboard.js"
+        ).read_text(encoding="utf-8")
+        api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
+
+        for required in (
+            "rx-v5521",
+            "ملخص اليوم",
+            "محفظة المشروعات والربحية",
+            "إضافة سريعة",
+            "ronix-logo.png",
+            "@media(max-width:760px)",
+        ):
+            self.assertIn(required, source)
+        self.assertIn("get_dashboard_data", api)
+        self.assertIn("RONIX Project Profitability", source)
