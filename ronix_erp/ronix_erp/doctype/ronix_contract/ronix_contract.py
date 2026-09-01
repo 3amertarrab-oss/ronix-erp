@@ -12,6 +12,8 @@ class RONIXContract(Document):
         self.validate_dates()
         self.validate_exchange_rate()
         self.validate_retention_policy()
+        self.populate_default_clauses()
+        self.validate_clauses()
         self.set_totals()
         self.validate_payment_schedule()
         self.validate_signatories()
@@ -127,6 +129,12 @@ class RONIXContract(Document):
     def validate_dates(self):
         if self.start_date and self.end_date and self.end_date < self.start_date:
             frappe.throw(_("Contract end date cannot be before the start date."))
+        if self.signature_date and self.contract_date and self.signature_date < self.contract_date:
+            frappe.throw(_("Signature date cannot be before the Contract date."))
+        if self.effective_date and self.contract_date and self.effective_date < self.contract_date:
+            frappe.throw(_("Effective date cannot be before the Contract date."))
+        if self.commencement_trigger == "Notice to Proceed" and not self.notice_to_proceed_date:
+            frappe.throw(_("Notice to Proceed date is required for this commencement trigger."))
 
     def validate_exchange_rate(self):
         if flt(self.exchange_rate) <= 0:
@@ -158,6 +166,26 @@ class RONIXContract(Document):
                 frappe.throw(
                     _("Signed or Active contracts require both customer and company signatories.")
                 )
+            if not self.signature_date:
+                self.signature_date = self.contract_date
+        if self.contract_status == "Active" and not self.effective_date:
+            self.effective_date = self.start_date or self.signature_date or self.contract_date
+
+    def populate_default_clauses(self):
+        if self.clauses or self.contract_template == "Custom" or self.docstatus != 0:
+            return
+        for clause in build_contract_template(
+            self.contract_template or "Engineering Services",
+            self.contract_language or "Bilingual",
+        ):
+            self.append("clauses", clause)
+
+    def validate_clauses(self):
+        for row in self.clauses or []:
+            if not (row.clause_title or "").strip():
+                frappe.throw(_("Every contract clause requires a title."))
+            if not (row.clause_text or "").strip():
+                frappe.throw(_("Contract clause {0} requires text.").format(row.clause_title))
 
     def validate_status_transition(self):
         previous = self.get_doc_before_save()
@@ -224,3 +252,70 @@ class RONIXContract(Document):
                 frappe.throw(
                     _("Submitted Contract payment schedule must cover the full contract value.")
                 )
+
+
+CONTRACT_TEMPLATES = {
+    "Engineering Services": [
+        ("Scope", "نطاق الخدمات", "Scope of Services", "يلتزم الطرف الثاني بتنفيذ الخدمات الهندسية الموضحة في نطاق العمل والمرفقات المعتمدة.", "The Contractor shall perform the engineering services described in the approved scope and attachments."),
+        ("Time", "المدة والبرنامج", "Time and Programme", "تبدأ المدة وفق محفز البدء المحدد بالعقد، ويلتزم الطرف الثاني بالبرنامج الزمني المعتمد.", "The contract period starts upon the selected commencement trigger and follows the approved programme."),
+        ("Payment", "القيمة وشروط السداد", "Price and Payment", "تُستحق الدفعات وفق جدول الدفعات المعتمد، وبعد اعتماد الأعمال أو المرحلة المقابلة.", "Payments become due under the approved payment schedule after certification of the corresponding work or milestone."),
+        ("Variation", "الأوامر التغييرية", "Change Orders", "لا يُعتد بأي تغيير في النطاق أو القيمة أو المدة إلا بموجب أمر تغييري مكتوب ومعتمد من الطرفين.", "No change to scope, price, or time is valid without a written Change Order approved by both parties."),
+        ("Retention", "الاستبقاء والخصومات", "Retention and Deductions", "تطبق نسبة الاستبقاء وشروط الإفراج عنها كما هو مبين في بيانات العقد، ولا تُجرى خصومات أخرى إلا بمستند نظامي.", "Retention and its release follow the contract data; no other deduction applies without proper supporting documentation."),
+        ("Warranty", "الجودة والضمان", "Quality and Warranty", "تُنفذ الخدمات وفق الأصول الفنية والمواصفات المعتمدة، ويلتزم الطرف الثاني بتصحيح أي قصور يقع ضمن مسؤوليته.", "Services shall comply with approved professional standards and specifications, and the Contractor shall remedy defects within its responsibility."),
+        ("Termination", "التعليق والإنهاء", "Suspension and Termination", "يجوز التعليق أو الإنهاء بإشعار مكتوب وفق أحكام العقد، مع تسوية الأعمال المنفذة والمستحقات حتى تاريخ الإنهاء.", "Suspension or termination requires written notice under the contract, with settlement of completed work and amounts due up to the termination date."),
+        ("Dispute", "القانون وتسوية النزاعات", "Governing Law and Disputes", "يسعى الطرفان لتسوية النزاع وديًا، وإلا يُحال للجهة المختصة وفق القانون الواجب التطبيق.", "The parties shall first seek amicable settlement; unresolved disputes go to the competent forum under applicable law."),
+    ],
+    "Steel Supply": [
+        ("Scope", "نطاق التوريد", "Supply Scope", "يشمل التوريد الأصناف والكميات والمواصفات الواردة في جدول العقد والمرفقات المعتمدة.", "The supply includes the items, quantities, and specifications listed in the contract schedule and approved attachments."),
+        ("Time", "التسليم", "Delivery", "يكون التسليم في الموقع والتواريخ المحددة وبمستندات الاستلام المعتمدة.", "Delivery shall occur at the agreed location and dates against approved receiving documents."),
+        ("Payment", "السعر والسداد", "Price and Payment", "الأسعار والدفعات وفق جدول العقد، وأي كميات إضافية تتطلب أمرًا تغييريًا.", "Prices and payments follow the contract schedule; additional quantities require an approved Change Order."),
+        ("Quality", "الفحص والمطابقة", "Inspection and Compliance", "تخضع المواد للفحص ويجب أن تطابق المواصفات والشهادات المطلوبة.", "Materials are subject to inspection and must comply with the required specifications and certificates."),
+        ("Variation", "الأوامر التغييرية", "Change Orders", "لا يُعتمد تعديل الكمية أو المواصفة أو موعد التسليم دون أمر تغييري مكتوب.", "Quantity, specification, or delivery changes require a written approved Change Order."),
+        ("Warranty", "الضمان", "Warranty", "يضمن المورد مطابقة المواد ويتحمل استبدال المواد غير المطابقة ضمن المدة المتفق عليها.", "The Supplier warrants compliance and shall replace nonconforming materials within the agreed period."),
+    ],
+    "Fabrication and Erection": [
+        ("Scope", "نطاق التصنيع والتركيب", "Fabrication and Erection Scope", "يشمل العمل الرسومات المعتمدة والتصنيع والتوريد والتركيب والاختبارات الواردة في نطاق العقد.", "The work includes approved drawings, fabrication, supply, erection, and testing stated in the contract scope."),
+        ("Time", "البرنامج والتنفيذ", "Programme and Execution", "ينفذ الطرف الثاني الأعمال وفق البرنامج المعتمد ومتطلبات الموقع والسلامة.", "The Contractor shall execute the works under the approved programme and site safety requirements."),
+        ("Payment", "المستخلصات والسداد", "Valuation and Payment", "تُقاس الأعمال وتُعتمد المستخلصات وفق نسب الإنجاز وجدول الدفعات.", "Work is measured and certified by progress in accordance with the payment schedule."),
+        ("Variation", "الأوامر التغييرية", "Change Orders", "أي تغيير في الرسومات أو الكميات أو طريقة التنفيذ أو المدة يتطلب أمرًا تغييريًا مكتوبًا.", "Changes to drawings, quantities, method, or time require a written Change Order."),
+        ("Retention", "الاستبقاء", "Retention", "تُحجز وتُفرج مبالغ الاستبقاء وفق النسبة والتاريخ أو الشروط المحددة بالعقد.", "Retention is held and released under the percentage, date, or conditions stated in the contract."),
+        ("Warranty", "الجودة والضمان", "Quality and Warranty", "يضمن الطرف الثاني جودة التصنيع والتركيب وإصلاح العيوب التي تقع ضمن مسؤوليته.", "The Contractor warrants fabrication and erection quality and shall remedy defects within its responsibility."),
+        ("Dispute", "التسوية والنزاعات", "Settlement and Disputes", "تُحل الخلافات وديًا أولًا ثم وفق القانون والجهة المختصة المحددة بالعقد.", "Disputes are first addressed amicably, then under the applicable law and competent forum."),
+    ],
+    "Custom": [],
+}
+
+
+def build_contract_template(template_name, language):
+    rows = []
+    for clause_type, title_ar, title_en, text_ar, text_en in CONTRACT_TEMPLATES.get(
+        template_name, CONTRACT_TEMPLATES["Engineering Services"]
+    ):
+        if language == "Arabic":
+            title = title_ar
+            text = f'<div dir="rtl">{text_ar}</div>'
+        elif language == "English":
+            title = title_en
+            text = f'<div dir="ltr">{text_en}</div>'
+        else:
+            title = f"{title_ar} / {title_en}"
+            text = (
+                f'<div dir="rtl">{text_ar}</div>'
+                f'<div dir="ltr" style="margin-top:8px">{text_en}</div>'
+            )
+        rows.append(
+            {
+                "clause_type": clause_type,
+                "clause_title": title,
+                "clause_text": text,
+                "page_break_before": 0,
+            }
+        )
+    return rows
+
+
+@frappe.whitelist()
+def get_contract_template(template_name, language="Bilingual"):
+    if not frappe.has_permission("RONIX Contract", ptype="create"):
+        frappe.throw(_("You are not permitted to create RONIX Contracts."), frappe.PermissionError)
+    return build_contract_template(template_name, language)
