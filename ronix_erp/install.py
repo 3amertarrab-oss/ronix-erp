@@ -206,12 +206,14 @@ CUSTOM_FIELDS = {
 
 def after_install():
     create_or_update_custom_fields()
+    ensure_ronix_print_formats()
     ensure_existing_project_cost_centers()
     reconcile_existing_commercial_links()
 
 
 def after_migrate():
     create_or_update_custom_fields()
+    ensure_ronix_print_formats()
     ensure_existing_project_cost_centers()
     reconcile_existing_commercial_links()
 
@@ -219,6 +221,12 @@ def after_migrate():
 def create_or_update_custom_fields():
     create_custom_fields(CUSTOM_FIELDS, update=True)
     frappe.clear_cache()
+
+
+def ensure_ronix_print_formats():
+    from ronix_erp.print_formats import ensure_print_formats
+
+    ensure_print_formats()
 
 
 def ensure_existing_project_cost_centers():
