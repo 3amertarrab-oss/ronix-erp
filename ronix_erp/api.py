@@ -247,10 +247,7 @@ def get_executive_dashboard():
                 "contract_value": flt(row.get("contract_value")),
                 "invoiced_amount": flt(row.get("invoiced_amount")),
                 "collected_amount": flt(row.get("collected_amount")),
-                "retention_amount": flt(row.get("retention_amount")),
-                "withholding_amount": flt(row.get("withholding_amount")),
                 "outstanding_amount": flt(row.get("outstanding_amount")),
-                "unbilled_contract": flt(row.get("unbilled_contract")),
                 "actual_revenue": flt(row.get("actual_revenue")),
                 "actual_cost": flt(row.get("actual_cost")),
                 "net_profit": flt(row.get("net_profit")),
@@ -314,10 +311,7 @@ def get_executive_dashboard():
     totals = {
         "contract_value": _sum_dashboard_rows(projects, "contract_value"),
         "collected_amount": _sum_dashboard_rows(projects, "collected_amount"),
-        "retention_amount": _sum_dashboard_rows(projects, "retention_amount"),
-        "withholding_amount": _sum_dashboard_rows(projects, "withholding_amount"),
         "outstanding_amount": _sum_dashboard_rows(projects, "outstanding_amount"),
-        "unbilled_contract": _sum_dashboard_rows(projects, "unbilled_contract"),
         "actual_cost": _sum_dashboard_rows(projects, "actual_cost"),
         "net_profit": _sum_dashboard_rows(projects, "net_profit"),
     }
@@ -719,21 +713,34 @@ def _require_permissions(source_doc, target_doctype):
         )
 
 
+try:
+    from frappe.utils import get_first_day, nowdate
+except ImportError:  # Lightweight unit-test stubs do not expose every Frappe utility.
+    from datetime import date
+
+    def nowdate():
+        return date.today().isoformat()
+
+    def get_first_day(value):
+        value = str(value)
+        return f"{value[:7]}-01"
+
+
 @frappe.whitelist()
 def get_module_dashboard(module_name):
     """Return a permission-aware overview for one RONIX workspace module."""
-    from frappe.utils import nowdate
-
     if frappe.session.user == "Guest":
         frappe.throw(_("Please sign in to open RONIX ERP."), frappe.PermissionError)
 
     module_name = (module_name or "").strip().lower()
     builders = {
         "sales": _sales_module,
+        "customers": _customers_module,
         "contracts": _contracts_module,
         "projects": _projects_module,
         "engineering": _engineering_module,
         "purchasing": _purchasing_module,
+        "suppliers": _suppliers_module,
         "inventory": _inventory_module,
         "manufacturing": _manufacturing_module,
         "expenses": _expenses_module,
@@ -783,6 +790,28 @@ def _sales_module(company, currency):
             "transaction_date",
             "grand_total",
             company,
+        ),
+    }
+
+
+def _customers_module(company, currency):
+    active_filters = {"disabled": 0}
+    invoice_filters = {"docstatus": 1}
+    return {
+        "cards": [
+            _count_module_card("customers", "Customer", active_filters),
+            _count_module_card("quotations", "Quotation", {"docstatus": ["<", 2]}, company),
+            _count_module_card("sales_invoices", "Sales Invoice", invoice_filters, company),
+            _money_module_card(
+                "receivables",
+                "Sales Invoice",
+                "outstanding_amount",
+                {**invoice_filters, "outstanding_amount": [">", 0]},
+                company,
+            ),
+        ],
+        "recent": _recent_master_rows(
+            "Customer", active_filters, "customer_name", "customer_group", "disabled"
         ),
     }
 
@@ -848,8 +877,6 @@ def _projects_module(company, currency):
 
 
 def _engineering_module(company, currency):
-    from frappe.utils import get_first_day, nowdate
-
     today = nowdate()
     open_filters = {"status": ["not in", ["Completed", "Cancelled"]]}
     timesheet_filters = {
@@ -897,6 +924,28 @@ def _purchasing_module(company, currency):
             "transaction_date",
             "grand_total",
             company,
+        ),
+    }
+
+
+def _suppliers_module(company, currency):
+    active_filters = {"disabled": 0}
+    invoice_filters = {"docstatus": 1}
+    return {
+        "cards": [
+            _count_module_card("suppliers", "Supplier", active_filters),
+            _count_module_card("purchase_orders", "Purchase Order", {"docstatus": ["<", 2]}, company),
+            _count_module_card("purchase_invoices", "Purchase Invoice", invoice_filters, company),
+            _money_module_card(
+                "payables",
+                "Purchase Invoice",
+                "outstanding_amount",
+                {**invoice_filters, "outstanding_amount": [">", 0]},
+                company,
+            ),
+        ],
+        "recent": _recent_master_rows(
+            "Supplier", active_filters, "supplier_name", "supplier_group", "disabled"
         ),
     }
 
@@ -972,8 +1021,6 @@ def _expenses_module(company, currency):
 
 
 def _billing_module(company, currency):
-    from frappe.utils import get_first_day, nowdate
-
     today = nowdate()
     collection_filters = {
         "docstatus": 1,
@@ -1120,6 +1167,31 @@ def _recent_module_rows(
             }
         )
     return records
+
+
+def _recent_master_rows(doctype, filters, title_field, group_field, disabled_field):
+    rows = _module_rows(
+        doctype,
+        filters,
+        [title_field, group_field, disabled_field],
+        None,
+        10,
+    )
+    return [
+        {
+            "doctype": doctype,
+            "name": row.name,
+            "title": row.get(title_field) or row.name,
+            "subtitle": row.get(group_field) or row.name,
+            "status": "Disabled" if row.get(disabled_field) else "Active",
+            "date": row.get("modified"),
+            "amount": None,
+            "currency": None,
+            "progress": None,
+            "modified": row.get("modified"),
+        }
+        for row in rows
+    ]
 
 
 def _module_rows(doctype, filters, fields, company, page_length):
