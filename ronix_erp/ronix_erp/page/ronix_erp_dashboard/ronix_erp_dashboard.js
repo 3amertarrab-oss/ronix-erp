@@ -17,7 +17,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
 
     const labels = {
         ar: {
-            version: "V5.5.26",
+            version: "V5.5.27",
             product: "نظام إدارة متكامل",
             core: "التجاري والتحصيل · CORE",
             dashboard: "لوحة التحكم",
@@ -195,7 +195,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             cost_centers_list: "مراكز التكلفة",
         },
         en: {
-            version: "V5.5.26",
+            version: "V5.5.27",
             product: "Integrated Management System",
             core: "Commercial & Collections · CORE",
             dashboard: "Dashboard",
@@ -1084,7 +1084,12 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             if ($(this).data("doctype")) openList($(this).data("doctype"));
             if ($(this).data("report")) openReport($(this).data("report"));
         });
-        root.on("click", "[data-module-summary]", function () {
+        root.on("click", "[data-module-summary]", function (event) {
+            // Prevent the native <summary> toggle from immediately closing the
+            // group after showModule() expands it. This keeps child centers,
+            // including Customers and Suppliers, reachable from the sidebar.
+            event.preventDefault();
+            $(this).closest(".ronix-nav-group").prop("open", true);
             const moduleKey = $(this).data("module-summary");
             if (moduleKey === "dashboard") showDashboard();
             else if (moduleMeta[moduleKey]) showModule(moduleKey);
