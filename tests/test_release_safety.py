@@ -22,8 +22,8 @@ class ReleaseSafetyTest(unittest.TestCase):
     def test_release_versions_match(self):
         package_init = (ROOT / "ronix_erp" / "__init__.py").read_text(encoding="utf-8")
         hooks = (ROOT / "ronix_erp" / "hooks.py").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.9.0"', package_init)
-        self.assertIn('app_version = "0.9.0"', hooks)
+        self.assertIn('__version__ = "0.9.1"', package_init)
+        self.assertIn('app_version = "0.9.1"', hooks)
 
     def test_contract_exposes_live_balances_and_retention_policy(self):
         path = (
