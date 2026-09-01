@@ -2,6 +2,12 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
+## Executive workspace v0.7.0
+
+The current release restores the professional Arabic RTL workspace from the approved
+HTML prototype, connects its KPI and project cards to live ERPNext data, and keeps the
+same navigation usable on desktop and mobile.
+
 ## Scope of v0.6.0
 
 Version 0.6.0 adds the missing RONIX operational hub and Frappe v16 Desktop app
