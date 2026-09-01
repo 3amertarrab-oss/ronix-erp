@@ -1,0 +1,40 @@
+{
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "editable_grid": 1,
+  "istable": 1,
+  "field_order": ["clause_type", "clause_title", "clause_text", "page_break_before"],
+  "fields": [
+    {
+      "fieldname": "clause_type",
+      "fieldtype": "Select",
+      "label": "Clause Type",
+      "options": "General\nScope\nCommercial\nPayment\nTime\nQuality\nVariation\nRetention\nWarranty\nTermination\nDispute\nForce Majeure\nCustom",
+      "default": "General",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "clause_title",
+      "fieldtype": "Data",
+      "label": "Clause Title",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "clause_text",
+      "fieldtype": "Text Editor",
+      "label": "Clause Text",
+      "reqd": 1
+    },
+    {
+      "fieldname": "page_break_before",
+      "fieldtype": "Check",
+      "label": "Start on New Page",
+      "default": "0"
+    }
+  ],
+  "module": "RONIX ERP",
+  "name": "RONIX Contract Clause",
+  "permissions": []
+}
