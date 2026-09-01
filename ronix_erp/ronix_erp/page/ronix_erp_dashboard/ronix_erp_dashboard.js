@@ -17,7 +17,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
 
     const labels = {
         ar: {
-            version: "V5.5.25",
+            version: "V5.5.26",
             product: "نظام إدارة متكامل",
             core: "التجاري والتحصيل · CORE",
             dashboard: "لوحة التحكم",
@@ -43,7 +43,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             source: "Single Source of Truth · Drill-Down",
             plan: "QA / اختيار المخططة",
             contract_value: "قيمة العقود",
-            collected_total: "التحصيل النقدي",
+            collected_total: "متحصل التحصيل",
             actual_cost: "تكلفة فعلية",
             net_profit: "ربح متوقع",
             projects: "المشروعات",
@@ -52,10 +52,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             project_collected: "المتحصل",
             cost: "التكلفة",
             profit: "الربح",
-            outstanding_project: "مستحق الفواتير",
-            retention: "احتجاز",
-            withholding: "خصم من المنبع",
-            unbilled_contract: "غير مفوتر",
+            outstanding_project: "المتبقي",
             margin: "الهامش",
             no_projects: "لا توجد مشروعات مرتبطة بعقود RONIX حتى الآن.",
             refresh: "تحديث البيانات",
@@ -137,6 +134,14 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             reports_subtitle: "تقارير تشغيلية ومالية قابلة للتصفية والطباعة والتصدير",
             administration_title: "إدارة النظام والصلاحيات",
             administration_subtitle: "المستخدمون والموظفون والأدوار ومراكز التكلفة",
+            customers_title: "مركز العملاء",
+            customers_subtitle: "ملف العميل وعروضه وعقوده وفواتيره ورصيده في مكان واحد",
+            suppliers_title: "مركز الموردين",
+            suppliers_subtitle: "ملف المورد وأوامر الشراء والفواتير والمستحقات في مكان واحد",
+            new_customer: "إضافة عميل",
+            new_supplier: "إضافة مورد",
+            customer_statement: "كشف حساب عميل",
+            supplier_statement: "كشف حساب مورد",
             quotation_value: "قيمة عروض الأسعار",
             active_contracts: "العقود النشطة",
             project_contract_value: "قيمة عقود المشروعات",
@@ -190,7 +195,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             cost_centers_list: "مراكز التكلفة",
         },
         en: {
-            version: "V5.5.25",
+            version: "V5.5.26",
             product: "Integrated Management System",
             core: "Commercial & Collections · CORE",
             dashboard: "Dashboard",
@@ -226,9 +231,6 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             cost: "Cost",
             profit: "Profit",
             outstanding_project: "Outstanding",
-            retention: "Retention",
-            withholding: "Withholding",
-            unbilled_contract: "Unbilled",
             margin: "Margin",
             no_projects: "No projects linked to RONIX contracts yet.",
             refresh: "Refresh Data",
@@ -310,6 +312,14 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             reports_subtitle: "Operational and financial reports for filtering, printing and export",
             administration_title: "System & Permissions",
             administration_subtitle: "Users, employees, roles and cost centers",
+            customers_title: "Customer Center",
+            customers_subtitle: "Customer profile, quotations, contracts, invoices, and balance in one place",
+            suppliers_title: "Supplier Center",
+            suppliers_subtitle: "Supplier profile, purchase orders, invoices, and payables in one place",
+            new_customer: "Add Customer",
+            new_supplier: "Add Supplier",
+            customer_statement: "Customer Statement",
+            supplier_statement: "Supplier Statement",
             quotation_value: "Quotation Value",
             active_contracts: "Active Contracts",
             project_contract_value: "Project Contract Value",
@@ -377,6 +387,18 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                 { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
             ],
         },
+        customers: {
+            title: "customers_title",
+            subtitle: "customers_subtitle",
+            icon: "users",
+            workflow: ["customers", "quotation_step", "contract_step", "collection_step"],
+            actions: [
+                { key: "new_customer", icon: "add", newDoc: "Customer" },
+                { key: "customers", icon: "users", doctype: "Customer" },
+                { key: "customer_statement", icon: "accounting", report: "Accounts Receivable" },
+                { key: "quotations", icon: "file-text", doctype: "Quotation" },
+            ],
+        },
         contracts: {
             title: "contracts_title",
             subtitle: "contracts_subtitle",
@@ -423,6 +445,18 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                 { key: "suppliers", icon: "users", doctype: "Supplier" },
                 { key: "purchase_orders", icon: "shopping-cart", doctype: "Purchase Order" },
                 { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
+            ],
+        },
+        suppliers: {
+            title: "suppliers_title",
+            subtitle: "suppliers_subtitle",
+            icon: "users",
+            workflow: ["suppliers", "purchase_order_step", "invoice_step", "accounting_step"],
+            actions: [
+                { key: "new_supplier", icon: "add", newDoc: "Supplier" },
+                { key: "suppliers", icon: "users", doctype: "Supplier" },
+                { key: "supplier_statement", icon: "accounting", report: "Accounts Payable" },
+                { key: "purchase_orders", icon: "shopping-cart", doctype: "Purchase Order" },
             ],
         },
         inventory: {
@@ -524,7 +558,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         },
         { key: "sales", module: "sales", icon: "users", items: [
             { key: "overview", icon: "view", action: "module", module: "sales" },
-            { key: "customers", icon: "users", doctype: "Customer" },
+            { key: "customers", icon: "users", action: "module", module: "customers" },
             { key: "quotations", icon: "file-text", doctype: "Quotation" },
             { key: "sales_invoices", icon: "invoice", doctype: "Sales Invoice" },
         ]},
@@ -548,7 +582,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         ]},
         { key: "purchasing", module: "purchasing", icon: "shopping-cart", items: [
             { key: "overview", icon: "view", action: "module", module: "purchasing" },
-            { key: "suppliers", icon: "users", doctype: "Supplier" },
+            { key: "suppliers", icon: "users", action: "module", module: "suppliers" },
             { key: "purchase_orders", icon: "shopping-cart", doctype: "Purchase Order" },
             { key: "purchase_invoices", icon: "invoice", doctype: "Purchase Invoice" },
         ]},
@@ -669,14 +703,18 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                     </section>
                     <nav class="ronix-nav">${navMarkup()}</nav>
                 </aside>
+                <button class="ronix-sidebar-backdrop" data-menu-toggle aria-label="Close menu"></button>
 
                 <main class="ronix-main">
                     <header class="ronix-toolbar">
                         <div class="ronix-toolbar-actions">
+                            <button class="ronix-menu-toggle" data-menu-toggle title="Menu">${icon("menu")}</button>
                             <button class="ronix-currency"><span data-i18n="company">${esc(t("company"))}</span>: <b data-company>—</b></button>
                             <details class="ronix-quick-add">
                                 <summary><span>＋</span><span data-i18n="quick_add">${esc(t("quick_add"))}</span></summary>
                                 <div>
+                                    <button data-new="Customer" data-i18n="new_customer">${esc(t("new_customer"))}</button>
+                                    <button data-new="Supplier" data-i18n="new_supplier">${esc(t("new_supplier"))}</button>
                                     <button data-new="Quotation" data-i18n="quotation">${esc(t("quotation"))}</button>
                                     <button data-new="RONIX Contract" data-i18n="contracts">${esc(t("contracts"))}</button>
                                     <button data-new="Project" data-i18n="projects">${esc(t("projects"))}</button>
@@ -809,10 +847,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                             <div class="ronix-project-metrics">
                                 <span><small>${esc(t("contract"))}</small><b>${formatMoney(project.contract_value)}</b></span>
                                 <span><small>${esc(t("invoiced"))}</small><b>${formatMoney(project.invoiced_amount)}</b></span>
-                                <span><small>${esc(t("unbilled_contract"))}</small><b>${formatMoney(project.unbilled_contract)}</b></span>
                                 <span><small>${esc(t("project_collected"))}</small><b>${formatMoney(project.collected_amount)}</b></span>
-                                <span><small>${esc(t("retention"))}</small><b>${formatMoney(project.retention_amount)}</b></span>
-                                <span><small>${esc(t("withholding"))}</small><b>${formatMoney(project.withholding_amount)}</b></span>
                                 <span><small>${esc(t("outstanding_project"))}</small><b>${formatMoney(project.outstanding_amount)}</b></span>
                                 <span><small>${esc(t("cost"))}</small><b>${formatMoney(project.actual_cost)}</b></span>
                                 <span class="${profitClass}"><small>${esc(t("profit"))}</small><b>${formatMoney(project.net_profit)}</b></span>
@@ -1032,6 +1067,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             openReport($(this).data("route-report"));
         });
         root.on("click", ".ronix-nav-item", function () {
+            root.find(".ronix-erp").removeClass("sidebar-open");
             const action = $(this).data("action");
             if (action === "focus-search") {
                 root.find("[data-project-search]").trigger("focus");
@@ -1071,6 +1107,9 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
         root.on("click", "[data-refresh]", () => {
             if (state.activeModule === "dashboard") loadData(true);
             else loadModuleData(state.activeModule, true);
+        });
+        root.on("click", "[data-menu-toggle]", () => {
+            root.find(".ronix-erp").toggleClass("sidebar-open");
         });
     }
 
@@ -1129,7 +1168,7 @@ function injectStyles() {
         .ronix-brand{display:flex;align-items:center;gap:10px;padding:18px 18px 9px}.ronix-brand img{width:45px;height:45px;object-fit:contain;border-radius:50%;background:#fff}.ronix-brand strong,.ronix-brand small{display:block}.ronix-brand strong{font-size:16px;letter-spacing:.02em}.ronix-brand small{margin-top:2px;font-size:9px;color:#d6e0e8}.ronix-version{align-self:center;padding:3px 9px;border-radius:999px;background:#183a52;color:#fff;font-size:9px;font-weight:800}
         .ronix-core-card{margin:16px 14px 10px;padding:10px;border:1px solid rgba(201,151,55,.38);border-radius:16px;background:rgba(255,255,255,.035)}.ronix-core-card header{display:flex;justify-content:space-between;gap:7px;padding:0 2px 8px;color:#e5bc62;font-size:9px}.ronix-core-card button{display:grid;grid-template-columns:24px 1fr 18px;align-items:center;gap:7px;width:100%;margin-top:6px;padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);color:#f3f7fa;text-align:start;font-size:11px;font-weight:700;cursor:pointer}.ronix-core-card button:hover{background:rgba(41,132,194,.18);border-color:#2d82bb}.ronix-core-card button b{display:grid;place-items:center;min-width:22px;padding:2px 4px;border-radius:999px;background:rgba(255,255,255,.13);font-size:9px}.ronix-core-card button svg{color:#dfaa43;width:15px;height:15px}
         .ronix-nav{padding:0 10px 28px}.ronix-nav-group{margin-top:7px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:rgba(255,255,255,.025);overflow:hidden}.ronix-nav-group summary{display:grid;grid-template-columns:23px 1fr 16px;align-items:center;gap:8px;padding:12px 13px;list-style:none;color:#f2f6f9;font-size:12px;font-weight:750;cursor:pointer}.ronix-nav-group summary::-webkit-details-marker{display:none}.ronix-nav-group[open] summary{background:rgba(18,92,140,.42)}.ronix-nav-icon svg{width:15px;height:15px;color:#9ec9e8}.ronix-chevron{font-size:19px;transition:.15s}.ronix-nav-group[open] .ronix-chevron{transform:rotate(-90deg)}.ronix-nav-items{padding:6px}.ronix-nav-item{display:grid;grid-template-columns:20px 1fr;align-items:center;gap:8px;width:100%;padding:9px 10px;border:0;border-radius:8px;background:transparent;color:#dbe8f1;text-align:start;font-size:10px;cursor:pointer}.ronix-nav-item:hover,.ronix-nav-item.active{background:#124e78;color:#fff;box-shadow:inset 3px 0 #36a2e8}.ronix-nav-item svg{width:14px;height:14px}
-        .ronix-main{grid-area:main;min-width:0;overflow:auto;padding:12px 18px 26px;scrollbar-width:thin;scrollbar-color:#a3b8c8 transparent}.ronix-toolbar{display:grid;grid-template-columns:auto minmax(260px,1fr) auto;align-items:center;gap:12px;margin-bottom:12px}.ronix-toolbar-actions{display:flex;align-items:center;gap:7px}.ronix-toolbar button,.ronix-toolbar summary{border:1px solid #cad8e4;border-radius:9px;background:#fff;color:#173b59;font-size:11px;font-weight:700;cursor:pointer}.ronix-currency{padding:9px 11px}.ronix-language{padding:9px 15px}.ronix-refresh{display:grid;place-items:center;width:38px;height:38px}.ronix-refresh svg{width:16px}.ronix-refresh.is-loading svg{animation:ronix-spin .8s linear infinite}.ronix-quick-add{position:relative}.ronix-quick-add summary{display:flex;align-items:center;gap:5px;padding:9px 13px;list-style:none}.ronix-quick-add summary::-webkit-details-marker{display:none}.ronix-quick-add>div{position:absolute;z-index:20;top:43px;inset-inline-start:0;min-width:165px;padding:6px;border:1px solid #d7e1ea;border-radius:11px;background:#fff;box-shadow:0 14px 35px rgba(7,31,53,.17)}.ronix-quick-add>div button{display:block;width:100%;padding:9px;border:0;text-align:start}.ronix-search-wrap{display:flex;align-items:center;gap:8px;padding:0 13px;border:1px solid #d2dee8;border-radius:11px;background:#fff}.ronix-search-wrap svg{width:15px;color:#6d8193}.ronix-search-wrap input{width:100%;height:38px;border:0!important;box-shadow:none!important;outline:0;background:transparent;font-size:12px}
+        .ronix-main{grid-area:main;min-width:0;overflow:auto;padding:12px 18px 26px;scrollbar-width:thin;scrollbar-color:#a3b8c8 transparent}.ronix-toolbar{display:grid;grid-template-columns:auto minmax(260px,1fr) auto;align-items:center;gap:12px;margin-bottom:12px}.ronix-toolbar-actions{display:flex;align-items:center;gap:7px}.ronix-toolbar button,.ronix-toolbar summary{border:1px solid #cad8e4;border-radius:9px;background:#fff;color:#173b59;font-size:11px;font-weight:700;cursor:pointer}.ronix-menu-toggle{display:none!important;place-items:center;width:38px;height:38px}.ronix-menu-toggle svg{width:17px}.ronix-sidebar-backdrop{display:none;position:fixed;z-index:98;inset:0;border:0;background:rgba(2,18,31,.48)}.ronix-currency{padding:9px 11px}.ronix-language{padding:9px 15px}.ronix-refresh{display:grid;place-items:center;width:38px;height:38px}.ronix-refresh svg{width:16px}.ronix-refresh.is-loading svg{animation:ronix-spin .8s linear infinite}.ronix-quick-add{position:relative}.ronix-quick-add summary{display:flex;align-items:center;gap:5px;padding:9px 13px;list-style:none}.ronix-quick-add summary::-webkit-details-marker{display:none}.ronix-quick-add>div{position:absolute;z-index:20;top:43px;inset-inline-start:0;min-width:165px;padding:6px;border:1px solid #d7e1ea;border-radius:11px;background:#fff;box-shadow:0 14px 35px rgba(7,31,53,.17)}.ronix-quick-add>div button{display:block;width:100%;padding:9px;border:0;text-align:start}.ronix-search-wrap{display:flex;align-items:center;gap:8px;padding:0 13px;border:1px solid #d2dee8;border-radius:11px;background:#fff}.ronix-search-wrap svg{width:15px;color:#6d8193}.ronix-search-wrap input{width:100%;height:38px;border:0!important;box-shadow:none!important;outline:0;background:transparent;font-size:12px}
         .ronix-title-panel{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px;border:1px solid #d5e1eb;border-radius:17px;background:#fff;box-shadow:0 6px 20px rgba(12,49,85,.035)}.ronix-eyebrow{display:inline-block;margin-bottom:5px;padding:3px 8px;border-radius:6px;background:#0c3c61;color:#fff;font-size:8px;font-weight:800}.ronix-title-panel h1{margin:0;color:#082f50;font-size:22px;font-weight:800}.ronix-title-panel p{margin:3px 0 0;color:#6d8194;font-size:9px}.ronix-title-actions{display:flex;gap:8px}.ronix-title-actions button{padding:10px 14px;border:0;border-radius:8px;background:#147bbe;color:#fff;font-size:11px;font-weight:800;cursor:pointer}.ronix-title-actions button.secondary{border:1px solid #c7d8e6;background:#fff;color:#163b58}
         .ronix-kpi-grid{display:grid;grid-template-columns:1.35fr repeat(4,minmax(145px,1fr));gap:10px;margin:12px 0}.ronix-kpi-grid article{min-height:101px;border:1px solid #d7e3ec;border-radius:14px;background:#fff}.ronix-today-card{padding:17px 18px;background:linear-gradient(135deg,#0b3455,#0d4169)!important;color:#fff}.ronix-today-card h2{margin:0 0 4px;color:#fff;font-size:16px}.ronix-today-card p{margin:0 0 13px;color:#cfe0ec;font-size:8px}.ronix-today-card div{display:flex;gap:6px;flex-wrap:wrap}.ronix-today-card button{padding:6px 9px;border:1px solid rgba(255,255,255,.3);border-radius:7px;background:rgba(255,255,255,.06);color:#fff;font-size:9px;font-weight:700;cursor:pointer}.ronix-kpi{position:relative;padding:18px 16px;border-top:3px solid var(--accent)!important}.ronix-kpi.red{--accent:var(--red)}.ronix-kpi.gold{--accent:var(--gold)}.ronix-kpi.green{--accent:var(--green)}.ronix-kpi.blue{--accent:var(--blue)}.ronix-kpi span,.ronix-kpi small,.ronix-kpi strong{display:block}.ronix-kpi span{color:#526b80;font-size:9px;font-weight:700}.ronix-kpi strong{margin:11px 0 6px;color:#07375d;font-size:17px;font-weight:850;white-space:nowrap}.ronix-kpi small{color:#8092a2;font-size:8px}.ronix-kpi small b{display:inline}
         .ronix-portfolio{padding:15px;border:1px solid #d4e1eb;border-radius:18px;background:#fff}.ronix-portfolio-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}.ronix-portfolio-head span{color:#b27c18;font-size:10px;font-weight:800}.ronix-portfolio-head h2{margin:2px 0;color:#0a3153;font-size:19px}.ronix-portfolio-head p{margin:0;color:#728698;font-size:9px}.ronix-portfolio-head button{display:flex;align-items:center;gap:6px;padding:9px 12px;border:1px solid #cadbe8;border-radius:9px;background:#fff;color:#143b5b;font-size:10px;font-weight:750;cursor:pointer}.ronix-portfolio-head button svg{width:14px}.ronix-portfolio-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.ronix-portfolio-totals article{padding:11px 13px;border:1px solid #dbe6ee;border-radius:10px;background:#f8fbfd;text-align:center}.ronix-portfolio-totals span,.ronix-portfolio-totals strong{display:block}.ronix-portfolio-totals span{color:#74899b;font-size:8px}.ronix-portfolio-totals strong{margin-top:5px;color:#07395f;font-size:13px;white-space:nowrap}.ronix-project-state{display:flex;align-items:center;justify-content:center;gap:8px;min-height:170px;color:#70879a;font-size:12px}.ronix-project-state svg{animation:ronix-spin 1s linear infinite}.ronix-project-state.error{color:#c62f43}.ronix-project-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ronix-project-card{display:flex;flex-direction:column;min-height:190px;padding:13px;border:1px solid #d8e4ec;border-radius:13px;background:#fff;color:#0d3453;text-align:start;cursor:pointer;transition:.16s}.ronix-project-card:hover{transform:translateY(-2px);border-color:#b98a34;box-shadow:0 12px 26px rgba(10,49,83,.09)}.ronix-project-card header{display:flex;justify-content:space-between;gap:10px}.ronix-project-card header>div:first-child{min-width:0}.ronix-project-card header span{color:#b07a1d;font-size:8px;font-weight:800}.ronix-project-card h3{margin:4px 0 2px;overflow:hidden;color:#0c3353;font-size:11px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}.ronix-project-card header small{color:#788b9b;font-size:8px}.ronix-status{text-align:end}.ronix-status span{display:block;color:#4d6a7e!important}.ronix-status b{font-size:9px}.ronix-progress{height:4px;margin:10px 0;border-radius:99px;background:#edf2f5;overflow:hidden}.ronix-progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#d0a03d,#1478b9)}.ronix-project-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 6px;margin-top:2px}.ronix-project-metrics small,.ronix-project-metrics b{display:block}.ronix-project-metrics small{color:#7c90a1;font-size:7px}.ronix-project-metrics b{margin-top:2px;color:#143a58;font-size:8px;white-space:nowrap}.ronix-project-metrics .positive b{color:#168352}.ronix-project-metrics .negative b{color:#cf3247}.ronix-project-card footer{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;color:#60798c;font-size:8px}.ronix-project-card footer span:last-child{display:flex;align-items:center;gap:4px;color:#176fa9;font-weight:800}.ronix-project-card footer svg{width:12px}.ronix-empty{grid-column:1/-1;display:grid;place-items:center;min-height:190px;color:#7890a1}.ronix-empty svg{width:30px;height:30px}.ronix-empty p{margin:8px 0 0}
@@ -1142,7 +1181,7 @@ function injectStyles() {
         .ronix-erp[dir="ltr"] .ronix-nav-item,.ronix-erp[dir="ltr"] .ronix-core-card button,.ronix-erp[dir="ltr"] .ronix-project-card,.ronix-erp[dir="ltr"] .ronix-module-kpi,.ronix-erp[dir="ltr"] .ronix-record-row,.ronix-erp[dir="ltr"] .ronix-action-card{text-align:left}.ronix-erp[dir="rtl"] .ronix-nav-item,.ronix-erp[dir="rtl"] .ronix-core-card button,.ronix-erp[dir="rtl"] .ronix-project-card,.ronix-erp[dir="rtl"] .ronix-module-kpi,.ronix-erp[dir="rtl"] .ronix-record-row,.ronix-erp[dir="rtl"] .ronix-action-card{text-align:right}
         @keyframes ronix-spin{to{transform:rotate(360deg)}}
         @media(max-width:1250px){.ronix-kpi-grid{grid-template-columns:repeat(4,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ronix-module-layout{grid-template-columns:1fr}.ronix-actions-panel>div{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:900px){.ronix-erp,.ronix-erp[dir="ltr"]{grid-template-columns:1fr;grid-template-areas:"main";height:auto;min-height:100vh;overflow:visible}.ronix-sidebar{display:none}.ronix-main{overflow:visible;padding:10px}.ronix-toolbar{grid-template-columns:1fr auto}.ronix-search-wrap{grid-column:1/-1;grid-row:2}.ronix-title-panel,.ronix-module-header{align-items:flex-start;flex-direction:column}.ronix-kpi-grid,.ronix-module-kpis{grid-template-columns:repeat(2,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-portfolio-totals{grid-template-columns:repeat(2,1fr)}.ronix-record-head{display:none}.ronix-record-row{grid-template-columns:minmax(160px,1fr) auto auto}.ronix-record-type,.ronix-record-date{display:none}}
+        @media(max-width:900px){.ronix-erp,.ronix-erp[dir="ltr"]{grid-template-columns:1fr;grid-template-areas:"main";height:auto;min-height:100vh;overflow:visible}.ronix-sidebar{display:flex;position:fixed;z-index:99;top:48px;bottom:0;width:285px;inset-inline-end:0;transform:translateX(110%);transition:transform .2s ease;box-shadow:0 18px 45px rgba(0,0,0,.28)}.ronix-erp[dir="ltr"] .ronix-sidebar{inset-inline-start:0;inset-inline-end:auto;transform:translateX(-110%)}.ronix-erp.sidebar-open .ronix-sidebar{transform:translateX(0)}.ronix-erp.sidebar-open .ronix-sidebar-backdrop{display:block}.ronix-menu-toggle{display:grid!important}.ronix-main{overflow:visible;padding:10px}.ronix-toolbar{grid-template-columns:1fr auto}.ronix-search-wrap{grid-column:1/-1;grid-row:2}.ronix-title-panel,.ronix-module-header{align-items:flex-start;flex-direction:column}.ronix-kpi-grid,.ronix-module-kpis{grid-template-columns:repeat(2,1fr)}.ronix-today-card{grid-column:1/-1}.ronix-portfolio-totals{grid-template-columns:repeat(2,1fr)}.ronix-record-head{display:none}.ronix-record-row{grid-template-columns:minmax(160px,1fr) auto auto}.ronix-record-type,.ronix-record-date{display:none}}
         @media(max-width:580px){.ronix-toolbar-actions{flex-wrap:wrap}.ronix-currency{display:none}.ronix-title-actions{width:100%;flex-direction:column}.ronix-title-actions button{width:100%}.ronix-kpi-grid,.ronix-module-kpis{grid-template-columns:1fr}.ronix-kpi-grid article{min-height:auto}.ronix-today-card{grid-column:auto}.ronix-portfolio-head{align-items:flex-start;flex-direction:column}.ronix-project-grid{grid-template-columns:1fr}.ronix-project-metrics{grid-template-columns:repeat(2,1fr)}.ronix-module-heading{align-items:flex-start}.ronix-flow-card>div{align-items:stretch;flex-direction:column}.ronix-flow-card i{transform:rotate(-90deg)}.ronix-actions-panel>div{grid-template-columns:1fr}.ronix-record-row{grid-template-columns:minmax(130px,1fr) auto 18px}.ronix-record-status{display:none}}
     `;
     document.head.appendChild(style);
