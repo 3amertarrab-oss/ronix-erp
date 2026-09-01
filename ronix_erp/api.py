@@ -196,6 +196,181 @@ def _get_project_hours(project_names):
     return {row.project: row.hours for row in rows}
 
 
+@frappe.whitelist()
+def get_executive_dashboard():
+    """Return the live, permission-aware data used by the RONIX executive workspace."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please sign in to open RONIX ERP."), frappe.PermissionError)
+
+    from frappe.utils import get_first_day, nowdate
+    from ronix_erp.ronix_erp.report.ronix_project_profitability.ronix_project_profitability import (
+        execute as execute_profitability_report,
+    )
+
+    company_row = _get_dashboard_company()
+    company = company_row.name
+    currency = company_row.default_currency
+
+    report_result = execute_profitability_report({"company": company})
+    project_rows = report_result[1] or []
+    project_names = [row.get("project") for row in project_rows if row.get("project")]
+    project_details = {}
+    if project_names:
+        project_details = {
+            row.name: row
+            for row in frappe.get_list(
+                "Project",
+                filters={"name": ["in", project_names]},
+                fields=[
+                    "name",
+                    "percent_complete",
+                    "expected_start_date",
+                    "expected_end_date",
+                ],
+                page_length=1000,
+            )
+        }
+
+    projects = []
+    for row in project_rows:
+        detail = project_details.get(row.get("project"), {})
+        projects.append(
+            {
+                "name": row.get("project"),
+                "project_name": row.get("project_name") or row.get("project"),
+                "customer": row.get("customer"),
+                "status": row.get("project_status"),
+                "contract": row.get("ronix_contract"),
+                "percent_complete": flt(detail.get("percent_complete")),
+                "expected_start_date": detail.get("expected_start_date"),
+                "expected_end_date": detail.get("expected_end_date"),
+                "contract_value": flt(row.get("contract_value")),
+                "invoiced_amount": flt(row.get("invoiced_amount")),
+                "collected_amount": flt(row.get("collected_amount")),
+                "outstanding_amount": flt(row.get("outstanding_amount")),
+                "actual_revenue": flt(row.get("actual_revenue")),
+                "actual_cost": flt(row.get("actual_cost")),
+                "net_profit": flt(row.get("net_profit")),
+                "margin_percent": flt(row.get("margin_percent")),
+            }
+        )
+
+    company_filter = {"company": company}
+    today = nowdate()
+    overdue_invoices = _dashboard_rows(
+        "Sales Invoice",
+        {
+            **company_filter,
+            "docstatus": 1,
+            "outstanding_amount": [">", 0],
+            "due_date": ["<", today],
+        },
+        ["name", "outstanding_amount", "conversion_rate"],
+    )
+    month_collections = _dashboard_rows(
+        "Payment Entry",
+        {
+            **company_filter,
+            "docstatus": 1,
+            "payment_type": "Receive",
+            "ronix_claim": ["is", "set"],
+            "posting_date": ["between", [get_first_day(today), today]],
+        },
+        ["name", "base_received_amount"],
+    )
+
+    counts = {
+        "quotations": _permitted_count(
+            "Quotation", {**company_filter, "docstatus": ["<", 2]}
+        ),
+        "contracts": _permitted_count(
+            "RONIX Contract", {**company_filter, "docstatus": ["<", 2]}
+        ),
+        "claims": _permitted_count(
+            "RONIX Claim", {**company_filter, "docstatus": ["<", 2]}
+        ),
+        "collections": _permitted_count(
+            "Payment Entry",
+            {
+                **company_filter,
+                "docstatus": 1,
+                "payment_type": "Receive",
+                "ronix_claim": ["is", "set"],
+            },
+        ),
+        "projects": len(projects),
+        "invoices": _permitted_count(
+            "Sales Invoice", {**company_filter, "docstatus": 1}
+        ),
+        "overdue_invoices": len(overdue_invoices),
+    }
+
+    pending_quotations = _permitted_count(
+        "Quotation", {**company_filter, "docstatus": 0}
+    )
+    totals = {
+        "contract_value": _sum_dashboard_rows(projects, "contract_value"),
+        "collected_amount": _sum_dashboard_rows(projects, "collected_amount"),
+        "outstanding_amount": _sum_dashboard_rows(projects, "outstanding_amount"),
+        "actual_cost": _sum_dashboard_rows(projects, "actual_cost"),
+        "net_profit": _sum_dashboard_rows(projects, "net_profit"),
+    }
+
+    return {
+        "company": company,
+        "currency": currency,
+        "user_name": frappe.get_cached_value("User", frappe.session.user, "full_name")
+        or frappe.session.user,
+        "counts": counts,
+        "kpis": {
+            "overdue_amount": sum(
+                flt(row.outstanding_amount) * (flt(row.conversion_rate) or 1)
+                for row in overdue_invoices
+            ),
+            "outstanding_amount": totals["outstanding_amount"],
+            "collected_this_month": sum(
+                flt(row.base_received_amount) for row in month_collections
+            ),
+            "pending_quotations": pending_quotations,
+        },
+        "totals": totals,
+        "projects": projects[:12],
+    }
+
+
+def _get_dashboard_company():
+    preferred_company = frappe.defaults.get_user_default("Company")
+    filters = {"name": preferred_company} if preferred_company else {}
+    companies = frappe.get_list(
+        "Company",
+        filters=filters,
+        fields=["name", "default_currency"],
+        page_length=1,
+    )
+    if not companies and preferred_company:
+        companies = frappe.get_list(
+            "Company", fields=["name", "default_currency"], page_length=1
+        )
+    if not companies:
+        frappe.throw(_("No permitted Company is available for the RONIX dashboard."))
+    return companies[0]
+
+
+def _dashboard_rows(doctype, filters, fields):
+    if not frappe.has_permission(doctype, ptype="read"):
+        return []
+    return frappe.get_list(
+        doctype,
+        filters=filters,
+        fields=fields,
+        page_length=100000,
+    )
+
+
+def _sum_dashboard_rows(rows, fieldname):
+    return sum(flt(row.get(fieldname)) for row in rows)
+
+
 def _permitted_count(doctype, filters=None):
     if not frappe.has_permission(doctype, ptype="read"):
         return None
