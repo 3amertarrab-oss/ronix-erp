@@ -1,0 +1,10 @@
+{
+  "doctype": "Page",
+  "module": "RONIX ERP",
+  "name": "ronix-erp-dashboard",
+  "page_name": "ronix-erp-dashboard",
+  "standard": "Yes",
+  "system_page": 0,
+  "title": "RONIX ERP",
+  "roles": []
+}

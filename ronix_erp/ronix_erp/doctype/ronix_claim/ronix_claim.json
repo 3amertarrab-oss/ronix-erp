@@ -1,0 +1,53 @@
+{
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "autoname": "format:CLM-{YYYY}-{#####}",
+  "is_submittable": 1,
+  "field_order": [
+    "claim_status", "collection_status", "company", "customer", "contract", "project", "sales_invoice", "payment_entry",
+    "dates_section", "posting_date", "due_date", "currency", "payment_milestone",
+    "items_section", "items", "totals_section", "gross_amount", "retention_percent", "retention_amount", "withholding_percent", "withholding_amount", "tax_percent", "tax_amount", "net_amount", "notes", "amended_from"
+  ],
+  "fields": [
+    {"fieldname": "claim_status", "fieldtype": "Select", "label": "Claim Status", "options": "Draft\nPending Approval\nApproved\nInvoiced\nCancelled", "default": "Draft", "reqd": 1, "in_list_view": 1, "allow_on_submit": 1},
+    {"fieldname": "collection_status", "fieldtype": "Select", "label": "Collection Status", "options": "Not Collected\nCollected with Retention\nCollected", "default": "Not Collected", "read_only": 1, "allow_on_submit": 1},
+    {"fieldname": "company", "fieldtype": "Link", "label": "Company", "options": "Company", "reqd": 1},
+    {"fieldname": "customer", "fieldtype": "Link", "label": "Customer", "options": "Customer", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "contract", "fieldtype": "Link", "label": "RONIX Contract", "options": "RONIX Contract", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "project", "fieldtype": "Link", "label": "Project", "options": "Project"},
+    {"fieldname": "sales_invoice", "fieldtype": "Link", "label": "Sales Invoice", "options": "Sales Invoice", "read_only": 1, "no_copy": 1, "allow_on_submit": 1},
+    {"fieldname": "payment_entry", "fieldtype": "Link", "label": "Payment Entry", "options": "Payment Entry", "read_only": 1, "no_copy": 1, "allow_on_submit": 1},
+    {"fieldname": "dates_section", "fieldtype": "Section Break", "label": "Claim Details"},
+    {"fieldname": "posting_date", "fieldtype": "Date", "label": "Posting Date", "reqd": 1, "default": "Today"},
+    {"fieldname": "due_date", "fieldtype": "Date", "label": "Due Date"},
+    {"fieldname": "currency", "fieldtype": "Link", "label": "Currency", "options": "Currency", "reqd": 1},
+    {"fieldname": "payment_milestone", "fieldtype": "Data", "label": "Payment Milestone"},
+    {"fieldname": "items_section", "fieldtype": "Section Break", "label": "Claim Items"},
+    {"fieldname": "items", "fieldtype": "Table", "label": "Items", "options": "RONIX Claim Item", "reqd": 1},
+    {"fieldname": "totals_section", "fieldtype": "Section Break", "label": "Claim Totals"},
+    {"fieldname": "gross_amount", "fieldtype": "Currency", "label": "Gross Amount", "read_only": 1, "options": "currency"},
+    {"fieldname": "retention_percent", "fieldtype": "Percent", "label": "Retention %", "default": "0"},
+    {"fieldname": "retention_amount", "fieldtype": "Currency", "label": "Retention Amount", "read_only": 1, "options": "currency"},
+    {"fieldname": "withholding_percent", "fieldtype": "Percent", "label": "Withholding %", "default": "0"},
+    {"fieldname": "withholding_amount", "fieldtype": "Currency", "label": "Withholding Amount", "read_only": 1, "options": "currency"},
+    {"fieldname": "tax_percent", "fieldtype": "Percent", "label": "Tax %", "default": "0"},
+    {"fieldname": "tax_amount", "fieldtype": "Currency", "label": "Tax Amount", "read_only": 1, "options": "currency"},
+    {"fieldname": "net_amount", "fieldtype": "Currency", "label": "Net Amount", "read_only": 1, "options": "currency", "in_list_view": 1},
+    {"fieldname": "notes", "fieldtype": "Small Text", "label": "Notes"},
+    {"fieldname": "amended_from", "fieldtype": "Link", "label": "Amended From", "options": "RONIX Claim", "read_only": 1, "no_copy": 1, "print_hide": 1}
+  ],
+  "links": [
+    {"link_doctype": "Sales Invoice", "link_fieldname": "ronix_claim"},
+    {"link_doctype": "Payment Entry", "link_fieldname": "ronix_claim"}
+  ],
+  "module": "RONIX ERP",
+  "name": "RONIX Claim",
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "print": 1, "email": 1, "export": 1},
+    {"role": "Accounts Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "print": 1, "email": 1, "export": 1},
+    {"role": "Sales Manager", "read": 1, "print": 1, "export": 1}
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}
