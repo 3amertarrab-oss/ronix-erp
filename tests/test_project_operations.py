@@ -163,6 +163,7 @@ class ProjectOperationsTest(unittest.TestCase):
         self.assertIn("def make_material_request_from_contract", api)
         self.assertIn("def prepare_project_operations", api)
         self.assertIn("_require_permissions(contract, \"Material Request\")", api)
+        self.assertIn('frappe.db.exists("DocType", doctype)', source)
 
 
 if __name__ == "__main__":

@@ -338,7 +338,12 @@ def after_migrate():
 
 
 def create_or_update_custom_fields():
-    create_custom_fields(CUSTOM_FIELDS, update=True)
+    installed_custom_fields = {
+        doctype: fields
+        for doctype, fields in CUSTOM_FIELDS.items()
+        if frappe.db.exists("DocType", doctype)
+    }
+    create_custom_fields(installed_custom_fields, update=True)
     frappe.clear_cache()
 
 
