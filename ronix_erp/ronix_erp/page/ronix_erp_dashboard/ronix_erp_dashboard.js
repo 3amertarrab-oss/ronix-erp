@@ -17,7 +17,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
 
     const labels = {
         ar: {
-            version: "V5.5.27",
+            version: "V1.0.0",
             product: "نظام إدارة متكامل",
             core: "التجاري والتحصيل · CORE",
             dashboard: "لوحة التحكم",
@@ -43,7 +43,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             source: "Single Source of Truth · Drill-Down",
             plan: "QA / اختيار المخططة",
             contract_value: "قيمة العقود",
-            collected_total: "متحصل التحصيل",
+            collected_total: "التحصيل النقدي",
             actual_cost: "تكلفة فعلية",
             net_profit: "ربح متوقع",
             projects: "المشروعات",
@@ -52,7 +52,10 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             project_collected: "المتحصل",
             cost: "التكلفة",
             profit: "الربح",
-            outstanding_project: "المتبقي",
+            outstanding_project: "مستحق الفواتير",
+            retention: "احتجاز",
+            withholding: "خصم من المنبع",
+            unbilled_contract: "غير مفوتر",
             margin: "الهامش",
             no_projects: "لا توجد مشروعات مرتبطة بعقود RONIX حتى الآن.",
             refresh: "تحديث البيانات",
@@ -195,7 +198,7 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             cost_centers_list: "مراكز التكلفة",
         },
         en: {
-            version: "V5.5.27",
+            version: "V1.0.0",
             product: "Integrated Management System",
             core: "Commercial & Collections · CORE",
             dashboard: "Dashboard",
@@ -231,6 +234,9 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
             cost: "Cost",
             profit: "Profit",
             outstanding_project: "Outstanding",
+            retention: "Retention",
+            withholding: "Withholding",
+            unbilled_contract: "Unbilled",
             margin: "Margin",
             no_projects: "No projects linked to RONIX contracts yet.",
             refresh: "Refresh Data",
@@ -847,7 +853,10 @@ frappe.pages["ronix-erp-dashboard"].on_page_load = function (wrapper) {
                             <div class="ronix-project-metrics">
                                 <span><small>${esc(t("contract"))}</small><b>${formatMoney(project.contract_value)}</b></span>
                                 <span><small>${esc(t("invoiced"))}</small><b>${formatMoney(project.invoiced_amount)}</b></span>
+                                <span><small>${esc(t("unbilled_contract"))}</small><b>${formatMoney(project.unbilled_contract)}</b></span>
                                 <span><small>${esc(t("project_collected"))}</small><b>${formatMoney(project.collected_amount)}</b></span>
+                                <span><small>${esc(t("retention"))}</small><b>${formatMoney(project.retention_amount)}</b></span>
+                                <span><small>${esc(t("withholding"))}</small><b>${formatMoney(project.withholding_amount)}</b></span>
                                 <span><small>${esc(t("outstanding_project"))}</small><b>${formatMoney(project.outstanding_amount)}</b></span>
                                 <span><small>${esc(t("cost"))}</small><b>${formatMoney(project.actual_cost)}</b></span>
                                 <span class="${profitClass}"><small>${esc(t("profit"))}</small><b>${formatMoney(project.net_profit)}</b></span>

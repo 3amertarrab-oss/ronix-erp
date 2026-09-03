@@ -3,6 +3,7 @@ from frappe import _
 from frappe.utils import flt
 
 from ronix_erp.accounting import get_accounting_settings, get_claim_adjustments
+from ronix_erp.audit import record_document_event
 
 
 def validate_payment_entry(doc, method=None):
@@ -99,6 +100,12 @@ def on_submit_payment_entry(doc, method=None):
     from ronix_erp.commercial import sync_contract_commercials
 
     sync_contract_commercials(claim.contract)
+    record_document_event(doc, "Submitted")
+
+
+def after_insert_payment_entry(doc, method=None):
+    if doc.get("ronix_claim"):
+        record_document_event(doc, "Created")
 
 
 def on_cancel_payment_entry(doc, method=None):
@@ -116,3 +123,4 @@ def on_cancel_payment_entry(doc, method=None):
     from ronix_erp.commercial import sync_contract_commercials
 
     sync_contract_commercials(contract)
+    record_document_event(doc, "Cancelled")

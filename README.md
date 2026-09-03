@@ -2,19 +2,40 @@
 
 Production-oriented ERPNext extensions for **RONIX STEEL**.
 
-## Executive workspace v0.7.0
+## RONIX ERP v1.0.0
 
-The current release restores the professional Arabic RTL workspace from the approved
-HTML prototype, connects its KPI and project cards to live ERPNext data, and keeps the
-same navigation usable on desktop and mobile.
+Version 1.0.0 is the integrated operational release for the approved professional
+Arabic RTL interface. It connects customers, suppliers, quotations, professional
+contracts, projects, purchasing, inventory, manufacturing, claims, invoices,
+collections, profitability, accounting reports, and branded printing to live ERPNext
+documents.
 
-## Scope of v0.6.0
+The controlled end-to-end model is:
 
-Version 0.6.0 adds the missing RONIX operational hub and Frappe v16 Desktop app
-registration. The responsive hub provides one branded entry point for projects,
-customers, quotations, contracts, claims, invoices, collections, purchasing, inventory,
-manufacturing, project profitability, accounting, and document printing. It uses the
-official RONIX logo and exposes permission-aware operational counters.
+`Customer -> Quotation -> RONIX Contract -> Project -> Purchase -> Inventory -> Manufacturing -> Claim -> Sales Invoice -> Payment Entry -> GL -> Project P&L`
+
+### Operational controls in v1.0.0
+
+- Every RONIX Project receives its own Cost Center and a controlled warehouse tree:
+  Raw Materials, Work In Progress, Finished Goods, and Scrap.
+- Material Requests, Purchase Orders, Purchase Receipts, Purchase Invoices, Work
+  Orders, Job Cards, Stock Entries, and Expense Claims inherit the RONIX Project,
+  Contract, and Cost Center context.
+- A transaction cannot mix rows from different projects, and a warehouse assigned to
+  another RONIX Project is rejected.
+- Operational vouchers continue to post only through submitted ERPNext documents; the
+  app never writes directly to GL Entry, Stock Ledger Entry, or Bin.
+- Creation, submission, and cancellation of controlled vouchers create an immutable
+  RONIX Audit Event with source, target, actor, timestamp, company, project, contract,
+  and a compact snapshot.
+- The executive dashboard separates contract value, invoiced value, unbilled value,
+  cash collected, retention, withholding, invoice outstanding, cost, and profit.
+- Customer and Supplier centers are first-class workspaces with direct create, list,
+  statement, purchasing, and receivable/payable actions.
+- Professional bilingual contracts include governed templates, clauses, signatures,
+  A4 printing, and the official RONIX logo.
+
+### Commercial controls retained
 
 It retains the staging migration hotfixes based on the live Frappe Cloud
 reconciliation of quotation `SAL-QTN-2026-00001`, contract `CON-2026-00001`, claim
@@ -50,11 +71,7 @@ The controlled-retention foundation from v0.3.0 remains in force:
   wrong customers, and unrelated invoices.
 - Payment Entries are never inserted or submitted automatically.
 
-The controlled commercial data model is:
-
-`Customer -> Quotation -> RONIX Contract -> Project -> RONIX Claim -> Sales Invoice -> Payment Entry`
-
-Implemented in this release:
+Additional implemented controls:
 
 - RONIX Contract with contractual items, approval gates, and payment milestones.
 - RONIX Claim with claim items, retention, withholding, tax, and calculated totals.

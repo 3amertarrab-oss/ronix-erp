@@ -63,7 +63,7 @@ class TestRonixWorkspace(unittest.TestCase):
         api = (ROOT / "ronix_erp" / "api.py").read_text(encoding="utf-8")
 
         for required in (
-            "V5.5.27",
+            "V1.0.0",
             "ملخص اليوم",
             "محفظة المشروعات والربحية",
             "إضافة سريعة",

@@ -3,6 +3,7 @@ from frappe import _
 from frappe.utils import flt, getdate
 
 from ronix_erp.accounting import get_accounting_settings
+from ronix_erp.audit import record_document_event
 
 
 def validate_sales_invoice(doc, method=None):
@@ -123,6 +124,12 @@ def on_submit_sales_invoice(doc, method=None):
     from ronix_erp.commercial import sync_contract_commercials
 
     sync_contract_commercials(doc.get("ronix_contract"))
+    record_document_event(doc, "Submitted")
+
+
+def after_insert_sales_invoice(doc, method=None):
+    if doc.get("ronix_claim"):
+        record_document_event(doc, "Created")
 
 
 def before_submit_sales_invoice(doc, method=None):
@@ -155,3 +162,4 @@ def on_cancel_sales_invoice(doc, method=None):
     from ronix_erp.commercial import sync_contract_commercials
 
     sync_contract_commercials(doc.get("ronix_contract"))
+    record_document_event(doc, "Cancelled")

@@ -44,6 +44,14 @@ frappe.ui.form.on("RONIX Contract", {
           frm,
         });
       }, __("Create"));
+      if (frm.doc.project) {
+        frm.add_custom_button(__("Material Request"), () => {
+          frappe.model.open_mapped_doc({
+            method: "ronix_erp.api.make_material_request_from_contract",
+            frm,
+          });
+        }, __("Create"));
+      }
     }
   },
 

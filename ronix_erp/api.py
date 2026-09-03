@@ -247,7 +247,10 @@ def get_executive_dashboard():
                 "contract_value": flt(row.get("contract_value")),
                 "invoiced_amount": flt(row.get("invoiced_amount")),
                 "collected_amount": flt(row.get("collected_amount")),
+                "retention_amount": flt(row.get("retention_amount")),
+                "withholding_amount": flt(row.get("withholding_amount")),
                 "outstanding_amount": flt(row.get("outstanding_amount")),
+                "unbilled_contract": flt(row.get("unbilled_contract")),
                 "actual_revenue": flt(row.get("actual_revenue")),
                 "actual_cost": flt(row.get("actual_cost")),
                 "net_profit": flt(row.get("net_profit")),
@@ -311,7 +314,10 @@ def get_executive_dashboard():
     totals = {
         "contract_value": _sum_dashboard_rows(projects, "contract_value"),
         "collected_amount": _sum_dashboard_rows(projects, "collected_amount"),
+        "retention_amount": _sum_dashboard_rows(projects, "retention_amount"),
+        "withholding_amount": _sum_dashboard_rows(projects, "withholding_amount"),
         "outstanding_amount": _sum_dashboard_rows(projects, "outstanding_amount"),
+        "unbilled_contract": _sum_dashboard_rows(projects, "unbilled_contract"),
         "actual_cost": _sum_dashboard_rows(projects, "actual_cost"),
         "net_profit": _sum_dashboard_rows(projects, "net_profit"),
     }
@@ -505,6 +511,55 @@ def make_claim_from_contract(source_name):
         )
     claim.run_method("set_totals")
     return claim
+
+
+@frappe.whitelist()
+def make_material_request_from_contract(source_name):
+    """Open a project-scoped purchase request without posting stock automatically."""
+    from frappe.utils import add_days, nowdate
+    from ronix_erp.events.project import ensure_project_warehouses
+
+    contract = frappe.get_doc("RONIX Contract", source_name)
+    _require_permissions(contract, "Material Request")
+    if contract.docstatus != 1 or contract.contract_status not in ("Signed", "Active"):
+        frappe.throw(_("Only a submitted Signed or Active Contract can create a Material Request."))
+    if not contract.project:
+        frappe.throw(_("Create and link the Contract Project before requesting materials."))
+
+    warehouses = ensure_project_warehouses(contract.project)
+    material_request = frappe.new_doc("Material Request")
+    material_request.company = contract.company
+    material_request.material_request_type = "Purchase"
+    material_request.transaction_date = nowdate()
+    material_request.schedule_date = contract.end_date or add_days(nowdate(), 7)
+    material_request.ronix_project = contract.project
+    material_request.ronix_contract = contract.name
+    material_request.set_warehouse = warehouses.get("ronix_raw_materials_warehouse")
+    return material_request
+
+
+@frappe.whitelist()
+def make_material_request_from_project(source_name):
+    project = frappe.get_doc("Project", source_name)
+    project.check_permission("read")
+    if not project.get("ronix_contract"):
+        frappe.throw(_("Project is not linked to a RONIX Contract."))
+    return make_material_request_from_contract(project.ronix_contract)
+
+
+@frappe.whitelist()
+def prepare_project_operations(source_name):
+    """Idempotently provision the cost center and four controlled project warehouses."""
+    from ronix_erp.events.project import ensure_project_cost_center, ensure_project_warehouses
+
+    project = frappe.get_doc("Project", source_name)
+    project.check_permission("write")
+    if not project.get("ronix_contract"):
+        frappe.throw(_("Only a Project linked to a RONIX Contract can be prepared."))
+    return {
+        "cost_center": ensure_project_cost_center(project),
+        "warehouses": ensure_project_warehouses(project),
+    }
 
 
 @frappe.whitelist()
