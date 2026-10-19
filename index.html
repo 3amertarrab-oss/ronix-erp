@@ -793,6 +793,19 @@ html,body,.paper,.paper *{
   html,body,.paper,.paper *{-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
   .paper{zoom:1!important;transform:none!important}
 }
+
+/* V10.6.5 iOS fix: prevent Safari font inflation on transformed A4 papers */
+@media screen and (max-width:720px){
+ html,body,.app,.paper,.paper *{-webkit-text-size-adjust:none!important;text-size-adjust:none!important}
+ .preview{align-items:flex-start!important;overflow:hidden!important}
+ .paper{zoom:1!important;max-width:none!important;flex:none!important}
+ .scope-group h4,.scope-section-head h3{font-size:10px!important;line-height:1.5!important;overflow-wrap:anywhere!important}
+ .scope-group .inline-check{display:flex!important;align-items:flex-start!important;min-height:0!important}
+ .scope-checkline .scope-text{font-size:8.5px!important;line-height:1.5!important}
+ .term-content h4{font-size:10.5px!important;line-height:1.55!important}
+ .term-content .term-body{font-size:10px!important;line-height:1.65!important}
+ .term-content .term-body>div{line-height:1.65!important}
+}
 </style>
 </head>
 <body>
@@ -1037,30 +1050,37 @@ window.addEventListener('DOMContentLoaded',()=>{syncForm();render();updateLangua
 <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('RONIX service worker:', err))); }</script>
 <script>
 (function(){
-  function fitMobileQuotation(){
-    if(window.matchMedia('print').matches)return;
-    var mobile=window.innerWidth<=720;
-    document.querySelectorAll('.paper').forEach(function(p){
-      if(!mobile){p.style.removeProperty('zoom');p.style.removeProperty('transform');p.style.removeProperty('margin-bottom');return;}
-      p.style.setProperty('transform','none','important');
-      p.style.setProperty('margin-bottom','14px','important');
-      p.style.removeProperty('zoom');
-      var layoutWidth=p.getBoundingClientRect().width || 794;
-      var workspace=document.querySelector('.workspace');
-      var available=(workspace ? workspace.clientWidth : window.innerWidth)-4;
-      var factor=Math.max(.28,Math.min(1,available/layoutWidth));
-      p.style.setProperty('zoom',String(factor),'important');
-    });
-  }
-  window.addEventListener('DOMContentLoaded',fitMobileQuotation);
-  window.addEventListener('load',fitMobileQuotation);
-  window.addEventListener('resize',fitMobileQuotation);
-  window.addEventListener('afterprint',fitMobileQuotation);
-  var observer=new MutationObserver(function(){window.requestAnimationFrame(fitMobileQuotation)});
-  window.addEventListener('DOMContentLoaded',function(){
-    var target=document.querySelector('.preview');
-    if(target)observer.observe(target,{childList:true,subtree:false});
+function mobilePageFit(){
+  if(window.matchMedia('print').matches)return;
+  var mobile=window.innerWidth<=720;
+  var preview=document.querySelector('.preview');
+  var workspace=document.querySelector('.workspace');
+  var available=(workspace?workspace.clientWidth:window.innerWidth)-12;
+  document.querySelectorAll('.paper').forEach(function(page){
+    page.style.removeProperty('zoom');
+    page.style.removeProperty('transform');
+    page.style.removeProperty('margin-bottom');
+    page.style.removeProperty('margin-left');
+    page.style.removeProperty('margin-right');
+    if(!mobile)return;
+    var width=page.offsetWidth||794;
+    var height=page.offsetHeight||1123;
+    var ratio=Math.max(.25,Math.min(1,available/width));
+    page.style.setProperty('transform','scale('+ratio+')','important');
+    page.style.setProperty('transform-origin','top left','important');
+    page.style.setProperty('margin-left','0px','important');
+    page.style.setProperty('margin-right','auto','important');
+    page.style.setProperty('margin-bottom',(-height*(1-ratio)+15)+'px','important');
   });
+}
+window.addEventListener('DOMContentLoaded',mobilePageFit);
+window.addEventListener('load',mobilePageFit);
+window.addEventListener('resize',mobilePageFit);
+window.addEventListener('afterprint',mobilePageFit);
+window.addEventListener('DOMContentLoaded',function(){
+ var target=document.querySelector('.preview');
+ if(target)new MutationObserver(function(){requestAnimationFrame(mobilePageFit)}).observe(target,{childList:true,subtree:false});
+});
 })();
 </script>
 </body>
