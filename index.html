@@ -771,6 +771,28 @@ button{cursor:pointer}
   .preview-toolbar{box-sizing:border-box!important}
   .topbar{box-sizing:border-box!important}
 }
+
+/* V10.6.4 iOS Safari text inflation and overlapping lines fix */
+html,body,.paper,.paper *{
+  -webkit-text-size-adjust:100%!important;
+  text-size-adjust:100%!important;
+}
+@media screen{
+  .paper .scope-group-head,.paper .scope-group-head .inline-check{height:auto!important;min-height:0!important;align-items:flex-start!important}
+  .paper .scope-group-head h4,.paper .scope-text,.paper .term-content h4,.paper .term-content .term-body,.paper .term-content .term-body>div{
+    height:auto!important;max-height:none!important;overflow-wrap:anywhere!important;white-space:normal!important;
+  }
+  .paper .term-content .term-body>div{display:block!important;min-height:0!important;margin:1.5mm 0!important;line-height:1.5!important}
+  .paper .term-row{height:auto!important;min-height:0!important}
+  .paper .term-content h4{line-height:1.4!important}
+  .paper .term-content .term-body{line-height:1.5!important}
+  .paper .scope-group ul{align-items:start!important}
+  .paper .scope-checkline{height:auto!important;min-height:0!important;align-items:start!important}
+}
+@media print{
+  html,body,.paper,.paper *{-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
+  .paper{zoom:1!important;transform:none!important}
+}
 </style>
 </head>
 <body>
