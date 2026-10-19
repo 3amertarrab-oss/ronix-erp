@@ -762,6 +762,15 @@ button{cursor:pointer}
 @media screen and (min-width:601px) and (max-width:720px){
   .paper{transform:scale(.70)!important;margin-bottom:-89mm!important}
 }
+
+/* V10.6.2 mobile responsive paper: the layout width is scaled by JS zoom */
+@media screen and (max-width:720px){
+  .preview{overflow:visible!important;min-width:0!important}
+  .paper{max-width:none!important;flex-shrink:0!important;margin:0 auto 14px!important;transform:none!important;transform-origin:top center!important}
+  .workspace{overflow:hidden!important}
+  .preview-toolbar{box-sizing:border-box!important}
+  .topbar{box-sizing:border-box!important}
+}
 </style>
 </head>
 <body>
@@ -995,5 +1004,33 @@ window.addEventListener('beforeprint',()=>{render();fitPrintPages()});
 window.addEventListener('DOMContentLoaded',()=>{syncForm();render();updateLanguageButtons();document.documentElement.dir=model.lang==='en'?'ltr':'rtl'});
 </script>
 <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('RONIX service worker:', err))); }</script>
+<script>
+(function(){
+  function fitMobileQuotation(){
+    if(window.matchMedia('print').matches)return;
+    var mobile=window.innerWidth<=720;
+    document.querySelectorAll('.paper').forEach(function(p){
+      if(!mobile){p.style.removeProperty('zoom');p.style.removeProperty('transform');p.style.removeProperty('margin-bottom');return;}
+      p.style.setProperty('transform','none','important');
+      p.style.setProperty('margin-bottom','14px','important');
+      p.style.removeProperty('zoom');
+      var layoutWidth=p.getBoundingClientRect().width || 794;
+      var workspace=document.querySelector('.workspace');
+      var available=(workspace ? workspace.clientWidth : window.innerWidth)-4;
+      var factor=Math.max(.28,Math.min(1,available/layoutWidth));
+      p.style.setProperty('zoom',String(factor),'important');
+    });
+  }
+  window.addEventListener('DOMContentLoaded',fitMobileQuotation);
+  window.addEventListener('load',fitMobileQuotation);
+  window.addEventListener('resize',fitMobileQuotation);
+  window.addEventListener('afterprint',fitMobileQuotation);
+  var observer=new MutationObserver(function(){window.requestAnimationFrame(fitMobileQuotation)});
+  window.addEventListener('DOMContentLoaded',function(){
+    var target=document.querySelector('.preview');
+    if(target)observer.observe(target,{childList:true,subtree:false});
+  });
+})();
+</script>
 </body>
 </html>
