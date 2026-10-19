@@ -907,7 +907,7 @@ html,body,.paper,.paper *{
       <button id="langEn" class="lang-choice" onclick="setLanguage('en')">English</button>
       <button id="langPro" class="lang-choice pro" onclick="setLanguage('pro')">احترافي | Professional</button>
     </div>
-    <button class="tb-btn primary" onclick="printQuote()">🖨️ طباعة / PDF</button><button class="tb-btn" onclick="openPrintInSafari()">↗ فتح للطباعة في Safari</button>
+    <button class="tb-btn primary" onclick="shareQuotationPDF()">📤 PDF / واتساب</button><button class="tb-btn" onclick="printQuote()">🖨️ طباعة</button><button class="tb-btn" onclick="openPrintInSafari()">↗ فتح للطباعة في Safari</button>
     <button class="tb-btn" onclick="exportBackup()">نسخة احتياطية</button>
     <label class="tb-btn" style="cursor:pointer">استيراد<input id="importFile" type="file" accept="application/json" style="display:none" onchange="importBackup(event)"></label>
   </div>
@@ -1155,5 +1155,59 @@ window.addEventListener('DOMContentLoaded',()=>{syncForm();render();updateLangua
  window.addEventListener('beforeprint',unwrapLegacyPages);
 })();
 </script>
-</body>
+<script>
+/* V11.1: Generate a real PDF file in the browser and use iOS share sheet. */
+async function ronixLoadPDFLib(url, check){
+ if(check())return;
+ await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error('تعذر تحميل مكتبة PDF، تحقق من الإنترنت'));document.head.appendChild(script)});
+ if(!check())throw new Error('PDF library unavailable');
+}
+async function ronixMakePDF(){
+ await ronixLoadPDFLib('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',()=>!!window.html2canvas);
+ await ronixLoadPDFLib('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
+ render();
+ const pages=Array.from(document.querySelectorAll('#preview .paper'));
+ if(pages.length!==2)throw new Error('صفحات العرض غير مكتملة');
+ const iframe=document.createElement('iframe');
+ iframe.setAttribute('aria-hidden','true');
+ Object.assign(iframe.style,{position:'fixed',left:'-3000px',top:'0',width:'1100px',height:'1300px',border:'0',opacity:'0',pointerEvents:'none'});
+ document.body.appendChild(iframe);
+ try{
+  const d=iframe.contentDocument;
+  const styles=Array.from(document.querySelectorAll('style')).map(x=>x.textContent.replace(/@media\s+print\s*\{/g,'@media screen {')).join('\n');
+  d.open();
+  d.write('<!DOCTYPE html><html lang="ar"><head><meta charset="utf-8"><style>'+styles+'\nhtml,body{margin:0!important;padding:0!important;background:white!important;width:100%!important} .paper{box-sizing:border-box!important;transform:none!important;zoom:1!important;position:relative!important;margin:0!important;box-shadow:none!important;} .screen-only,.preview-toolbar{display:none!important}.print-only{display:inline!important}.print-excluded{display:none!important}</style></head><body><div class="workspace"><main class="preview">'+pages.map(p=>p.outerHTML).join('')+'</main></div></body></html>');
+  d.close();
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  const pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+  const sheets=Array.from(d.querySelectorAll('.paper'));
+  for(let i=0;i<sheets.length;i++){
+   const el=sheets[i];el.style.width='794px';el.style.height='1122px';el.style.maxHeight='1122px';el.style.minHeight='1122px';el.style.overflow='hidden';
+   const canvas=await window.html2canvas(el,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false,width:794,height:1122,windowWidth:1100});
+   if(i)pdf.addPage('a4','portrait');
+   pdf.addImage(canvas.toDataURL('image/jpeg',.93),'JPEG',0,0,210,297);
+  }
+  return pdf.output('blob');
+ }finally{iframe.remove()}
+}
+async function shareQuotationPDF(){
+ const button=document.querySelector('[onclick="shareQuotationPDF()"]');
+ const text=button?.textContent;
+ if(button){button.disabled=true;button.textContent='⏳ جاري إنشاء PDF...'}
+ try{
+  const blob=await ronixMakePDF();
+  const ref=(document.querySelector('.doc-card .meta b')?.textContent||'Quotation').replace(/[^\w-]/g,'').slice(0,40);
+  const name='RONIX_'+(ref||'Quotation')+'.pdf';
+  const file=new File([blob],name,{type:'application/pdf'});
+  if(navigator.share&&navigator.canShare?.({files:[file]})){
+   try{await navigator.share({files:[file],title:'RONIX Quotation'});return}catch(err){if(err.name==='AbortError')return}
+  }
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  alert('تم إنشاء ملف PDF. افتحه من الملفات ثم مشاركة ← WhatsApp إذا لم تظهر قائمة المشاركة تلقائيًا.');
+ }catch(err){alert('تعذّر إنشاء PDF: '+err.message)}
+ finally{if(button){button.disabled=false;button.textContent=text}}
+}
+</script></body>
 </html>
