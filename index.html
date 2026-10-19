@@ -807,33 +807,26 @@ html,body,.paper,.paper *{
  .term-content .term-body>div{line-height:1.65!important}
 }
 
-/* RONIX V10.7 - +30% readable content typography */
+/* V10.7 typography refinement: balanced enlargement, preserve print template */
 @media screen {
- .paper .intro-box{font-size:16px!important;line-height:1.6!important}
- .paper .info-card-print h3{font-size:16px!important;line-height:1.4!important}
- .paper .info-card-print p,.paper .info-card-print .edit-line{font-size:14.5px!important;line-height:1.5!important}
- .paper .fin-table th{font-size:14.5px!important;line-height:1.35!important}
- .paper .fin-table td{font-size:14px!important;line-height:1.4!important}
- .paper .total-table td{font-size:14px!important;line-height:1.4!important}
- .paper .scope-section-head h3{font-size:13.5px!important;line-height:1.45!important}
- .paper .scope-group h4{font-size:13px!important;line-height:1.48!important}
- .paper .scope-text{font-size:11.6px!important;line-height:1.55!important}
- .paper .term-content h4{font-size:15.6px!important;line-height:1.45!important}
- .paper .term-content .term-body,.paper .term-content .term-body>div{font-size:14.3px!important;line-height:1.6!important}
- .paper .terms-title{font-size:16px!important}
- .paper .scope-group,.paper .term-row{height:auto!important;min-height:0!important}
- .paper .scope-group ul{align-items:start!important}
- .paper .term-content .term-body>div{margin:2mm 0!important}
+  /* Document hierarchy: larger body text, modest headers, generous line height. */
+  .paper .intro-box{font-size:14px!important;line-height:1.58!important}
+  .paper .info-card-print h3{font-size:14px!important;line-height:1.4!important}
+  .paper .info-card-print p,.paper .info-card-print .edit-line{font-size:12.6px!important;line-height:1.5!important}
+  .paper .fin-table th{font-size:12px!important;line-height:1.35!important}
+  .paper .fin-table td,.paper .total-table td{font-size:11.8px!important;line-height:1.4!important}
+  .paper .scope-section-head h3{font-size:12.6px!important;line-height:1.45!important}
+  .paper .scope-group h4{font-size:11.8px!important;line-height:1.45!important}
+  .paper .scope-text{font-size:10.7px!important;line-height:1.5!important}
+  .paper .term-content h4{font-size:13.3px!important;line-height:1.45!important}
+  .paper .term-content .term-body,.paper .term-content .term-body>div{font-size:12px!important;line-height:1.55!important}
+  .paper .terms-title{font-size:14px!important}
+  .paper .scope-group,.paper .term-row{height:auto!important;min-height:0!important}
+  .paper .scope-checkline,.paper .term-content .term-body>div{height:auto!important;min-height:0!important}
+  .paper .scope-group ul{align-items:start!important}
+  .paper .term-content .term-body>div{margin:1.4mm 0!important}
 }
-@media print {
- /* A4 keeps larger type only while content remains in printable page */
- .paper .scope-text{font-size:9.2px!important;line-height:1.42!important}
- .paper .scope-group h4{font-size:10px!important;line-height:1.36!important}
- .paper .term-content .term-body,.paper .term-content .term-body>div{font-size:9.6px!important;line-height:1.4!important}
- .paper .term-content h4{font-size:10.6px!important;line-height:1.4!important}
- .paper .fin-table td{font-size:9.6px!important}
- .paper .fin-table th{font-size:9.7px!important}
-}
+/* Printed A4 intentionally retains its proven sizes; on-screen scaling is independent. */
 </style>
 </head>
 <body>
