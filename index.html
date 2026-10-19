@@ -839,6 +839,60 @@ html,body,.paper,.paper *{
 .ronix-page-holder{display:contents!important;width:auto!important;height:auto!important;margin:0!important;position:static!important}
 .ronix-page-holder .paper{position:relative!important;left:auto!important;top:auto!important;transform:none!important;zoom:1!important}
 }
+
+/* RONIX V11: native iPhone layout; no scaled A4 document on phone */
+@media screen and (max-width:720px){
+ html,body,.app{width:100%!important;max-width:100%!important;overflow-x:hidden!important;-webkit-text-size-adjust:100%!important}
+ .workspace{display:block!important;overflow:visible!important;width:100%!important;max-width:100%!important;padding:10px!important}
+ .preview{width:100%!important;max-width:100%!important;min-width:0!important;overflow:visible!important;display:flex!important;align-items:stretch!important;gap:15px!important}
+ .preview-toolbar{width:100%!important;max-width:100%!important;box-sizing:border-box!important;display:flex!important;flex-wrap:wrap!important;gap:7px!important}
+ .preview-toolbar .ctl{max-width:100%!important;flex-wrap:wrap!important}
+ .paper,.page-one,.page-two{
+  width:100%!important;min-width:0!important;max-width:100%!important;
+  height:auto!important;min-height:0!important;max-height:none!important;
+  position:relative!important;left:auto!important;top:auto!important;
+  transform:none!important;zoom:1!important;overflow:visible!important;
+  margin:0!important;padding:12px 11px 16px!important;
+  box-shadow:0 5px 18px rgba(8,26,57,.10)!important;border-radius:12px!important;
+ }
+ .paper *{-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
+ .q-header,.page2-head.q-header{
+  display:flex!important;flex-wrap:wrap!important;height:auto!important;min-height:0!important;
+  padding:12px!important;gap:9px!important;border-radius:15px!important;
+ }
+ .q-header .logo-wrap{width:60px!important;height:53px!important;flex:none!important}
+ .q-header .head-brand{flex:1 1 135px!important;min-width:0!important}
+ .q-header .doc-card{flex:1 1 100%!important;min-width:0!important;max-width:100%!important}
+ .q-header::before,.q-header::after{pointer-events:none!important}
+ .inline-data-grid,.info-grid-print{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+ .info-card-print{width:100%!important;min-width:0!important;min-height:0!important;padding:12px!important}
+ .info-card-print .edit-line{display:flex!important;flex-wrap:wrap!important;min-height:0!important;gap:6px!important}
+ .info-card-print .edit-line>b{flex:0 0 38%!important;max-width:38%!important}
+ .info-card-print .inline-edit.info-edit{height:auto!important;min-height:34px!important;flex:1!important}
+ .fin-table{width:100%!important;table-layout:fixed!important}
+ .fin-table th,.fin-table td{overflow-wrap:anywhere!important;white-space:normal!important;padding:5px 3px!important;font-size:10px!important}
+ .fin-table .cell-edit{width:100%!important;min-width:0!important;padding:2px!important}
+ .scope-section-head,.scope-group,.scope-group-head{height:auto!important;min-height:0!important}
+ .scope-group{padding:10px!important}
+ .scope-group ul{grid-template-columns:minmax(0,1fr)!important}
+ .scope-checkline{height:auto!important;min-height:0!important;grid-template-columns:auto auto minmax(0,1fr)!important}
+ .scope-group h4{font-size:13px!important;line-height:1.48!important}
+ .scope-text{font-size:12px!important;line-height:1.55!important}
+ .term-content,.term-content h4,.term-content .term-body{width:100%!important;min-width:0!important;max-width:100%!important;overflow-wrap:anywhere!important}
+ .term-content h4{font-size:15px!important;line-height:1.45!important}
+ .term-content .term-body,.term-content .term-body>div{font-size:13px!important;line-height:1.55!important}
+ .term-row{padding:12px 4px!important}
+ .term-inline-check{gap:7px!important}
+ .total-table{width:min(100%,280px)!important}
+ .page-footer{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;margin-top:18px!important;display:block!important;width:100%!important}
+ .footer-inner{width:100%!important;grid-template-columns:1fr!important;text-align:center!important;gap:6px!important}
+ .footer-doc,.footer-contact-print{text-align:center!important}
+ .print-tip{display:none!important}
+}
+/* Print sheets maintain physical A4 sizing independent from iPhone UI */
+@media print{
+ .paper,.page-one,.page-two{transform:none!important;zoom:1!important;border-radius:0!important;box-shadow:none!important}
+}
 </style>
 </head>
 <body>
@@ -853,7 +907,7 @@ html,body,.paper,.paper *{
       <button id="langEn" class="lang-choice" onclick="setLanguage('en')">English</button>
       <button id="langPro" class="lang-choice pro" onclick="setLanguage('pro')">احترافي | Professional</button>
     </div>
-    <button class="tb-btn primary" onclick="printQuote()">🖨️ طباعة ملونة / PDF</button>
+    <button class="tb-btn primary" onclick="printQuote()">🖨️ طباعة / PDF</button><button class="tb-btn" onclick="openPrintInSafari()">↗ فتح للطباعة في Safari</button>
     <button class="tb-btn" onclick="exportBackup()">نسخة احتياطية</button>
     <label class="tb-btn" style="cursor:pointer">استيراد<input id="importFile" type="file" accept="application/json" style="display:none" onchange="importBackup(event)"></label>
   </div>
@@ -1067,6 +1121,11 @@ function exportBackup(){const blob=new Blob([JSON.stringify({version:'10.5',expo
 function importBackup(ev){const f=ev.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.archive)saveArchive(d.archive);if(d.current){model=d.current;saveCurrent()}syncForm();render();alert('تم استيراد النسخة الاحتياطية')}catch(e){alert('ملف النسخة الاحتياطية غير صالح')}};r.readAsText(f);ev.target.value=''}
 function resetStorage(){if(!confirm('سيتم حذف الأرشيف والإعدادات المحلية نهائيًا. متابعة؟'))return;storeRemove(STORAGE_KEY);storeRemove(ARCHIVE_KEY);model=sampleModel();syncForm();render()}
 function fitPrintPages(){document.querySelectorAll('.paper').forEach(p=>{p.classList.remove('fit-compact','fit-ultra');void p.offsetHeight;if(p.scrollHeight>p.clientHeight+2){p.classList.add('fit-compact');void p.offsetHeight}if(p.scrollHeight>p.clientHeight+2){p.classList.add('fit-ultra');void p.offsetHeight}})}
+function openPrintInSafari(){
+ var url=location.origin+location.pathname+'?ronix_print=1';
+ var w=window.open(url,'_blank');
+ if(!w){alert('افتح التطبيق في Safari ثم اختر مشاركة ← طباعة أو حفظ كـ PDF.');}
+}
 function printQuote(){
   const total=(Number(model.pay1)||0)+(Number(model.pay2)||0);
   if(Math.abs(total-100)>.001&&!confirm(`مجموع الدفعات ${total}% وليس 100%. هل تريد الطباعة رغم ذلك؟`))return;
@@ -1083,57 +1142,17 @@ window.addEventListener('DOMContentLoaded',()=>{syncForm();render();updateLangua
 <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('RONIX service worker:', err))); }</script>
 <script>
 (function(){
-let busy=false;
-function fitRONIX(){
- if(busy||window.matchMedia('print').matches)return;
- busy=true;
- try{
- const narrow=window.innerWidth<=720;
- document.querySelectorAll('.preview > .paper, .preview > .ronix-page-holder > .paper').forEach(page=>{
-  let holder=page.parentElement.classList.contains('ronix-page-holder')?page.parentElement:null;
-  page.style.removeProperty('zoom');
-  page.style.removeProperty('margin-bottom');
-  page.style.removeProperty('margin-left');
-  page.style.removeProperty('margin-right');
-  if(!narrow){
-    page.style.removeProperty('transform');
-    page.style.removeProperty('transform-origin');
-    if(holder)holder.replaceWith(page);
-    return;
-  }
-  if(!holder){
-    holder=document.createElement('div');
-    holder.className='ronix-page-holder';
-    page.parentNode.insertBefore(holder,page);
-    holder.appendChild(page);
-  }
-  page.style.setProperty('transform','none','important');
-  const naturalWidth=page.offsetWidth||794;
-  const naturalHeight=page.offsetHeight||1123;
-  const available=Math.max(270, Math.min(window.innerWidth-20,holder.parentElement.clientWidth-8));
-  const factor=Math.min(1,available/naturalWidth);
-  holder.style.width=(naturalWidth*factor)+'px';
-  holder.style.height=(naturalHeight*factor)+'px';
-  holder.style.position='relative';
-  holder.style.flex='none';
-  holder.style.margin='0 auto 16px';
-  page.style.setProperty('transform-origin','top left','important');
-  page.style.setProperty('transform','scale('+factor+')','important');
-  page.style.setProperty('position','absolute','important');
-  page.style.setProperty('left','0','important');
-  page.style.setProperty('top','0','important');
+ function unwrapLegacyPages(){
+  document.querySelectorAll('.ronix-page-holder').forEach(function(holder){
+   var page=holder.querySelector('.paper');
+   if(page)holder.replaceWith(page);
+  });
+  document.querySelectorAll('.paper').forEach(function(page){
+   ['transform','transform-origin','zoom','position','left','top','margin-bottom','margin-left','margin-right'].forEach(function(k){page.style.removeProperty(k)});
+  });
  }
- );
- }finally{busy=false;}
-}
-window.addEventListener('DOMContentLoaded',fitRONIX);
-window.addEventListener('load',fitRONIX);
-window.addEventListener('resize',fitRONIX);
-window.addEventListener('afterprint',fitRONIX);
-window.addEventListener('DOMContentLoaded',()=>{
- const target=document.querySelector('.preview');
- if(target)new MutationObserver(()=>requestAnimationFrame(fitRONIX)).observe(target,{childList:true});
-});
+ document.addEventListener('DOMContentLoaded',unwrapLegacyPages);
+ window.addEventListener('beforeprint',unwrapLegacyPages);
 })();
 </script>
 </body>
