@@ -1191,11 +1191,14 @@ async function ronixMakePDF(){
  }finally{iframe.remove()}
 }
 async function shareQuotationPDF(){
+ alert('بدأ تجهيز ملف PDF. اضغط موافق وانتظر إنشاء الملف.');
+
  const button=document.querySelector('[onclick="shareQuotationPDF()"]');
  const text=button?.textContent;
  if(button){button.disabled=true;button.textContent='⏳ جاري إنشاء PDF...'}
  try{
   const blob=await ronixMakePDF();
+  alert('تم إنشاء PDF. اضغط موافق لفتح المشاركة، أو سيتم حفظه عند تعذر المشاركة.');
   const ref=(document.querySelector('.doc-card .meta b')?.textContent||'Quotation').replace(/[^\w-]/g,'').slice(0,40);
   const name='RONIX_'+(ref||'Quotation')+'.pdf';
   const file=new File([blob],name,{type:'application/pdf'});
