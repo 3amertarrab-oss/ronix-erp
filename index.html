@@ -827,6 +827,18 @@ html,body,.paper,.paper *{
   .paper .term-content .term-body>div{margin:1.4mm 0!important}
 }
 /* Printed A4 intentionally retains its proven sizes; on-screen scaling is independent. */
+
+/* V10.7.1 stable iPhone A4 preview holders */
+@media screen and (max-width:720px){
+.preview{overflow:visible!important;align-items:center!important;width:100%!important}
+.workspace{overflow:visible!important}
+.ronix-page-holder{max-width:100%;overflow:visible}
+.ronix-page-holder .paper{margin:0!important;max-width:none!important;zoom:1!important}
+}
+@media print{
+.ronix-page-holder{display:contents!important;width:auto!important;height:auto!important;margin:0!important;position:static!important}
+.ronix-page-holder .paper{position:relative!important;left:auto!important;top:auto!important;transform:none!important;zoom:1!important}
+}
 </style>
 </head>
 <body>
@@ -1071,36 +1083,56 @@ window.addEventListener('DOMContentLoaded',()=>{syncForm();render();updateLangua
 <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('RONIX service worker:', err))); }</script>
 <script>
 (function(){
-function mobilePageFit(){
-  if(window.matchMedia('print').matches)return;
-  var mobile=window.innerWidth<=720;
-  var preview=document.querySelector('.preview');
-  var workspace=document.querySelector('.workspace');
-  var available=(workspace?workspace.clientWidth:window.innerWidth)-12;
-  document.querySelectorAll('.paper').forEach(function(page){
-    page.style.removeProperty('zoom');
+let busy=false;
+function fitRONIX(){
+ if(busy||window.matchMedia('print').matches)return;
+ busy=true;
+ try{
+ const narrow=window.innerWidth<=720;
+ document.querySelectorAll('.preview > .paper, .preview > .ronix-page-holder > .paper').forEach(page=>{
+  let holder=page.parentElement.classList.contains('ronix-page-holder')?page.parentElement:null;
+  page.style.removeProperty('zoom');
+  page.style.removeProperty('margin-bottom');
+  page.style.removeProperty('margin-left');
+  page.style.removeProperty('margin-right');
+  if(!narrow){
     page.style.removeProperty('transform');
-    page.style.removeProperty('margin-bottom');
-    page.style.removeProperty('margin-left');
-    page.style.removeProperty('margin-right');
-    if(!mobile)return;
-    var width=page.offsetWidth||794;
-    var height=page.offsetHeight||1123;
-    var ratio=Math.max(.25,Math.min(1,available/width));
-    page.style.setProperty('transform','scale('+ratio+')','important');
-    page.style.setProperty('transform-origin','top left','important');
-    page.style.setProperty('margin-left','0px','important');
-    page.style.setProperty('margin-right','auto','important');
-    page.style.setProperty('margin-bottom',(-height*(1-ratio)+15)+'px','important');
-  });
+    page.style.removeProperty('transform-origin');
+    if(holder)holder.replaceWith(page);
+    return;
+  }
+  if(!holder){
+    holder=document.createElement('div');
+    holder.className='ronix-page-holder';
+    page.parentNode.insertBefore(holder,page);
+    holder.appendChild(page);
+  }
+  page.style.setProperty('transform','none','important');
+  const naturalWidth=page.offsetWidth||794;
+  const naturalHeight=page.offsetHeight||1123;
+  const available=Math.max(270, Math.min(window.innerWidth-20,holder.parentElement.clientWidth-8));
+  const factor=Math.min(1,available/naturalWidth);
+  holder.style.width=(naturalWidth*factor)+'px';
+  holder.style.height=(naturalHeight*factor)+'px';
+  holder.style.position='relative';
+  holder.style.flex='none';
+  holder.style.margin='0 auto 16px';
+  page.style.setProperty('transform-origin','top left','important');
+  page.style.setProperty('transform','scale('+factor+')','important');
+  page.style.setProperty('position','absolute','important');
+  page.style.setProperty('left','0','important');
+  page.style.setProperty('top','0','important');
+ }
+ );
+ }finally{busy=false;}
 }
-window.addEventListener('DOMContentLoaded',mobilePageFit);
-window.addEventListener('load',mobilePageFit);
-window.addEventListener('resize',mobilePageFit);
-window.addEventListener('afterprint',mobilePageFit);
-window.addEventListener('DOMContentLoaded',function(){
- var target=document.querySelector('.preview');
- if(target)new MutationObserver(function(){requestAnimationFrame(mobilePageFit)}).observe(target,{childList:true,subtree:false});
+window.addEventListener('DOMContentLoaded',fitRONIX);
+window.addEventListener('load',fitRONIX);
+window.addEventListener('resize',fitRONIX);
+window.addEventListener('afterprint',fitRONIX);
+window.addEventListener('DOMContentLoaded',()=>{
+ const target=document.querySelector('.preview');
+ if(target)new MutationObserver(()=>requestAnimationFrame(fitRONIX)).observe(target,{childList:true});
 });
 })();
 </script>
