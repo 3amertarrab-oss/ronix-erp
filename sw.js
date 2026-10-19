@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ronix-quotation-v10-7-1-layout';
+const CACHE_NAME = 'ronix-quotation-v11-iphone-native';
 const APP_ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_ASSETS))); self.skipWaiting(); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('ronix-') && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
