@@ -1,0 +1,5 @@
+include README.md
+include license.txt
+recursive-include ronix_erp *.css *.csv *.html *.ico *.js *.json *.md *.png *.py *.svg *.txt
+recursive-exclude ronix_erp *.pyc
+

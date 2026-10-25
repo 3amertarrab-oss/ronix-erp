@@ -1,0 +1,137 @@
+{% set rtl = doc.contract_language != "English" %}
+{% macro label(ar, en) -%}
+  {%- if doc.contract_language == "Arabic" -%}{{ ar }}
+  {%- elif doc.contract_language == "English" -%}{{ en }}
+  {%- else -%}{{ ar }} / {{ en }}
+  {%- endif -%}
+{%- endmacro %}
+{% macro money(value) -%}{{ doc.currency or "EGP" }} {{ "{:,.0f}".format(value or 0) }}{%- endmacro %}
+
+<style>
+  @page { size: A4; margin: 16mm 13mm 19mm; }
+  .print-format { padding: 0 !important; margin: 0 !important; color: #102f49; font-family: "Noto Sans Arabic", Tahoma, Arial, sans-serif; font-size: 10px; line-height: 1.55; }
+  .rx-contract { position: relative; direction: {{ "rtl" if rtl else "ltr" }}; }
+  .rx-header { display: table; width: 100%; padding-bottom: 10px; border-bottom: 3px solid #b8892d; }
+  .rx-header > div { display: table-cell; vertical-align: middle; }
+  .rx-header-logo { width: 78px; text-align: center; }
+  .rx-header-logo img { width: 68px; height: 68px; object-fit: contain; }
+  .rx-header-title { padding: 0 12px; }
+  .rx-header-title h1 { margin: 0 0 3px; color: #082f50; font-size: 20px; font-weight: 800; }
+  .rx-header-title p { margin: 0; color: #62798c; font-size: 9px; }
+  .rx-header-number { width: 155px; text-align: {{ "left" if rtl else "right" }}; }
+  .rx-header-number strong, .rx-header-number span { display: block; }
+  .rx-header-number strong { color: #b27c18; font-size: 12px; }
+  .rx-header-number span { margin-top: 3px; color: #536c80; font-size: 9px; }
+  .rx-section { margin-top: 12px; break-inside: avoid; page-break-inside: avoid; }
+  .rx-section.allow-break { break-inside: auto; page-break-inside: auto; }
+  .rx-section-title { margin: 0 0 7px; padding: 6px 9px; border-inline-start: 4px solid #b8892d; background: #edf3f7; color: #0a3658; font-size: 11px; font-weight: 800; }
+  .rx-meta { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .rx-meta td { width: 33.333%; padding: 7px 8px; border: 1px solid #dbe4eb; vertical-align: top; }
+  .rx-meta span, .rx-meta strong { display: block; }
+  .rx-meta span { color: #6f8292; font-size: 8px; }
+  .rx-meta strong { margin-top: 2px; color: #123a59; font-size: 10px; overflow-wrap: anywhere; }
+  .rx-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .rx-table thead { display: table-header-group; }
+  .rx-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .rx-table th { padding: 7px 6px; border: 1px solid #0b3657; background: #0b3657; color: #fff; font-size: 8px; font-weight: 700; }
+  .rx-table td { padding: 7px 6px; border: 1px solid #dce5eb; vertical-align: top; font-size: 9px; }
+  .rx-table .rx-num { text-align: end; white-space: nowrap; }
+  .rx-total { margin-top: 7px; text-align: end; color: #0b3657; font-size: 12px; font-weight: 800; }
+  .rx-richtext { padding: 9px 10px; border: 1px solid #dce5eb; background: #fbfcfd; color: #253f54; }
+  .rx-clause { margin-top: 9px; padding: 9px 10px; border: 1px solid #dde6ec; border-inline-start: 3px solid #b8892d; break-inside: avoid; page-break-inside: avoid; }
+  .rx-clause.page-break { break-before: page; page-break-before: always; }
+  .rx-clause h3 { margin: 0 0 5px; color: #0b3657; font-size: 10px; }
+  .rx-clause-body { color: #304b60; font-size: 9px; }
+  .rx-signatures { display: table; width: 100%; margin-top: 22px; border-spacing: 18px 0; table-layout: fixed; break-inside: avoid; page-break-inside: avoid; }
+  .rx-signature { display: table-cell; width: 50%; height: 88px; padding: 9px; border: 1px solid #cfdbe4; vertical-align: top; }
+  .rx-signature strong { display: block; color: #0a3658; }
+  .rx-signature span { display: block; margin-top: 12px; color: #4f687b; }
+  .rx-signature-line { margin-top: 28px; border-top: 1px solid #7c8f9e; }
+  .rx-footer { position: fixed; right: 0; bottom: -14mm; left: 0; display: flex; justify-content: space-between; padding-top: 3px; border-top: 1px solid #cdd9e2; color: #7b8b98; font-size: 7px; }
+  .rx-page-number:before { content: counter(page); }
+</style>
+
+<article class="rx-contract">
+  <header class="rx-header">
+    <div class="rx-header-logo"><img src="/assets/ronix_erp/images/ronix-logo.png" alt="RONIX STEEL"></div>
+    <div class="rx-header-title">
+      <h1>{{ label("عقد احترافي", "PROFESSIONAL CONTRACT") }}</h1>
+      <p>RONIX STEEL · {{ doc.title }}</p>
+    </div>
+    <div class="rx-header-number">
+      <strong>{{ doc.name }}</strong>
+      <span>{{ label("التاريخ", "Date") }}: {{ frappe.utils.formatdate(doc.contract_date) }}</span>
+      <span>{{ label("الحالة", "Status") }}: {{ doc.contract_status }}</span>
+    </div>
+  </header>
+
+  <section class="rx-section">
+    <h2 class="rx-section-title">{{ label("بيانات الأطراف والعقد", "Parties & Contract Data") }}</h2>
+    <table class="rx-meta">
+      <tr>
+        <td><span>{{ label("الشركة", "Company") }}</span><strong>{{ doc.company }}</strong></td>
+        <td><span>{{ label("العميل", "Customer") }}</span><strong>{{ doc.customer }}</strong></td>
+        <td><span>{{ label("عرض السعر", "Quotation") }}</span><strong>{{ doc.quotation }}</strong></td>
+      </tr>
+      <tr>
+        <td><span>{{ label("تاريخ التوقيع", "Signature Date") }}</span><strong>{{ frappe.utils.formatdate(doc.signature_date) if doc.signature_date else "—" }}</strong></td>
+        <td><span>{{ label("تاريخ السريان", "Effective Date") }}</span><strong>{{ frappe.utils.formatdate(doc.effective_date) if doc.effective_date else "—" }}</strong></td>
+        <td><span>{{ label("محفز بدء الأعمال", "Commencement Trigger") }}</span><strong>{{ doc.commencement_trigger or "—" }}</strong></td>
+      </tr>
+      <tr>
+        <td><span>{{ label("تاريخ البدء", "Start Date") }}</span><strong>{{ frappe.utils.formatdate(doc.start_date) if doc.start_date else "—" }}</strong></td>
+        <td><span>{{ label("تاريخ الانتهاء", "End Date") }}</span><strong>{{ frappe.utils.formatdate(doc.end_date) if doc.end_date else "—" }}</strong></td>
+        <td><span>{{ label("قيمة العقد", "Contract Value") }}</span><strong>{{ money(doc.contract_value) }}</strong></td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="rx-section allow-break">
+    <h2 class="rx-section-title">{{ label("نطاق العمل", "Scope of Work") }}</h2>
+    <div class="rx-richtext">{{ doc.scope or "—" }}</div>
+  </section>
+
+  <section class="rx-section allow-break">
+    <h2 class="rx-section-title">{{ label("بنود وكميات العقد", "Contract Items") }}</h2>
+    <table class="rx-table">
+      <thead><tr><th style="width:5%">#</th><th style="width:18%">{{ label("الكود", "Code") }}</th><th>{{ label("البيان", "Description") }}</th><th style="width:10%">{{ label("الكمية", "Qty") }}</th><th style="width:15%">{{ label("السعر", "Rate") }}</th><th style="width:17%">{{ label("الإجمالي", "Amount") }}</th></tr></thead>
+      <tbody>
+        {% for row in doc.items %}
+        <tr><td>{{ loop.index }}</td><td>{{ row.item_code }}</td><td>{{ row.item_name }}</td><td class="rx-num">{{ "{:,.3f}".format(row.qty or 0).rstrip("0").rstrip(".") }}</td><td class="rx-num">{{ money(row.rate) }}</td><td class="rx-num">{{ money(row.amount) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="rx-total">{{ label("إجمالي قيمة العقد", "Total Contract Value") }}: {{ money(doc.contract_value) }}</div>
+  </section>
+
+  {% if doc.payment_schedule %}
+  <section class="rx-section allow-break">
+    <h2 class="rx-section-title">{{ label("جدول الدفعات", "Payment Schedule") }}</h2>
+    <table class="rx-table">
+      <thead><tr><th>#</th><th>{{ label("المرحلة", "Milestone") }}</th><th>{{ label("النسبة", "Percentage") }}</th><th>{{ label("القيمة", "Amount") }}</th><th>{{ label("الاستحقاق", "Due Date") }}</th></tr></thead>
+      <tbody>{% for row in doc.payment_schedule %}<tr><td>{{ loop.index }}</td><td>{{ row.milestone }}</td><td class="rx-num">{{ "{:,.0f}".format(row.percentage or 0) }}%</td><td class="rx-num">{{ money(row.amount) }}</td><td>{{ frappe.utils.formatdate(row.due_date) if row.due_date else "—" }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <section class="rx-section allow-break">
+    <h2 class="rx-section-title">{{ label("بنود العقد", "Contract Clauses") }}</h2>
+    {% for clause in doc.clauses %}
+      <div class="rx-clause{% if clause.page_break_before %} page-break{% endif %}">
+        <h3>{{ loop.index }}. {{ clause.clause_title }}</h3>
+        <div class="rx-clause-body">{{ clause.clause_text }}</div>
+      </div>
+    {% endfor %}
+  </section>
+
+  {% if doc.terms %}
+  <section class="rx-section allow-break"><h2 class="rx-section-title">{{ label("الشروط الإضافية", "Additional Terms") }}</h2><div class="rx-richtext">{{ doc.terms }}</div></section>
+  {% endif %}
+
+  <section class="rx-signatures">
+    <div class="rx-signature"><strong>{{ label("عن العميل", "For the Customer") }}</strong><span>{{ doc.signed_by_customer or "—" }}</span><div class="rx-signature-line"></div></div>
+    <div class="rx-signature"><strong>{{ label("عن شركة رونيكس ستيل", "For RONIX STEEL") }}</strong><span>{{ doc.signed_by_company or "—" }}</span><div class="rx-signature-line"></div></div>
+  </section>
+
+  <footer class="rx-footer"><span>RONIX STEEL · {{ doc.name }}</span><span>{{ label("صفحة", "Page") }} <b class="rx-page-number"></b></span></footer>
+</article>
