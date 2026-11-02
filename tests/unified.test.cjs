@@ -30,6 +30,13 @@ test('finance import adds only new records and preserves the current valid datab
  assert.equal(preview.conflicts.length,0);assert.equal(preview.add.projects,1);assert.equal(preview.add.customers,1);assert.equal(preview.counts.candidate.projects,2);
  const result=U.financeImportCommit(d,owner,incoming,preview),merged=U.root(d).finance.payload;
  assert.equal(result.replayed,false);assert.equal(merged.projects.length,2);assert.equal(merged.customers.length,2);assert.deepEqual(merged.projects.find(x=>x.code==='FIN-1'),before.projects[0]);assert.deepEqual(merged.payments.find(x=>x.id==='PAY-1'),before.payments[0]);
+ assert.equal(result.directory.customersAdded,2);assert.equal(result.directory.projectsAdded,2);assert.equal(result.directory.linksAdded,2);assert.equal(d.data.filter(x=>x.importedFrom==='finance-v20').length,2);
+});
+test('replaying an imported finance backup repairs the main customer and project directory',()=>{
+ const d=fixture(),payload=financePayload(),preview=U.financeImportPreview(d,owner,payload);U.financeImportCommit(d,owner,payload,preview);
+ d.data=d.data.filter(x=>x.importedFrom!=='finance-v20');d.masters.customers=d.masters.customers.filter(x=>x.importedFrom!=='finance-v20');U.root(d).links.splice(0);
+ const repairPreview=U.financeImportPreview(d,owner,payload);assert.equal(repairPreview.totals.records.add,0);assert.equal(repairPreview.directory.projectsAdded,1);assert.equal(repairPreview.directory.customersAdded,1);
+ const repaired=U.financeImportCommit(d,owner,payload,repairPreview);assert.equal(repaired.replayed,true);assert.equal(repaired.directory.projectsAdded,1);assert.equal(repaired.directory.linksAdded,1);assert.equal(d.data.find(x=>x.name==='Finance Project').client,'Finance Client');
 });
 test('finance import treats identical data as identical and replays the same import once',()=>{
  const d=fixture(),payload=financePayload();U.saveFinance(d,owner,{baseRevision:0,payload});const preview=U.financeImportPreview(d,owner,payload);
