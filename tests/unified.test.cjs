@@ -8,6 +8,7 @@ const owner={id:'owner',role:'Owner'},acc={id:'acc',role:'Accountant'},engineer=
 function fixture(){const d=D.normalizeBackup(JSON.parse(fs.readFileSync(path.join(__dirname,'../erp/data/initial-backup.json'))));d.masters.customers.push({id:'C1',name:'Test Customer'});d.data.push({id:'PRJ-101',name:'Test Project',customerId:'C1',client:'Test Customer',tasks:[],value:0,invoice:0,paid:0,projectDraft:true});return d;}
 function draft(currency='EGP',kind='quote'){return {schema:'ronix-commercial-draft',version:1007,state:{kind,path:'execution',currency,client:'Test Customer',project:'Test Project',reference:'TEST-'+kind+'-'+currency,date:'2026-11-02',example:false,discount:0,vat:false,vatRate:14,stamp:false,stampRate:0,payments:[{label:'Advance',percent:50},{label:'Delivery',percent:50}],items:[{id:'roof',name:'Roof',on:true,scope:'تركيب فقط',unit:'m2',qty:2,rate:100,priceMode:'priced'}],engineering:[],terms:[]}};}
 function saved(d,kind='quote',currency='EGP'){return U.saveDocument(d,owner,{baseRevision:U.root(d).commercial.revision,projectId:'PRJ-101',customerId:'C1',draft:draft(currency,kind)});}
+function financePayload(o={}){const code=o.code||'FIN-1',client=o.client||'Finance Client',customerId=o.customerId||'FC-1',project={code,name:o.name||'Finance Project',client,contract:o.contract??100,state:'نشط',kind:'تنفيذ'};if(o.unifiedSourceId)project.unifiedSourceId=o.unifiedSourceId;return U.R.validate(U.R.normalize({projects:[project],customers:[{id:customerId,name:client,phone:'',email:'',note:''}],assignments:[{id:o.assignmentId||'AS-1',code,designer:'Designer A',fee:100,kind:'تصميم'}],payments:[{id:o.paymentId||'PAY-1',code,designer:'Designer A',amount:o.paymentAmount??30,date:'2026-11-01',method:'cash',ref:'R1',note:''}],documentNumbers:[{id:o.documentId||'SEQ-1',kind:'payment',number:o.documentNumber??1}]}));}
 test('approved 1007 pricing: discount, VAT, stamp, free items, engineering and precision',()=>{
  const s=draft().state;s.discount=10;s.vat=true;s.stamp=true;s.stampRate=1;
  assert.deepEqual(Object.fromEntries(Object.entries(U.amounts(s)).filter(([k])=>k!=='lines')),{subtotal:200,discount:10,net:190,vat:27,stamp:2,total:219});
@@ -23,6 +24,31 @@ test('optimistic document concurrency and immutable approval',()=>{const d=fixtu
 test('handoff to approved accounting is idempotent and preserves currency',()=>{const d=fixture(),r=saved(d,'contract','USD');U.approve(d,owner,{baseRevision:1,id:r.document.id});assert.throws(()=>U.handoff(d,acc,{baseRevision:2,financeRevision:0,id:r.document.id,rate:0}));const b={baseRevision:2,financeRevision:0,id:r.document.id,rate:50};const a=U.handoff(d,acc,b),again=U.handoff(d,acc,b);assert.equal(again.replayed,true);assert.equal(U.root(d).finance.payload.projects.length,1);const p=U.root(d).finance.payload.projects[0];assert.equal(p.contractCurrency,'USD');assert.equal(p.originalContract,200);assert.equal(p.contract,10000);assert.equal(a.financeCode,'PRJ-101');assert.equal(U.projection(d,d.data[0]).value,10000);});
 test('finance conflicts cannot overwrite newer changes and malformed records fail',()=>{const d=fixture(),payload=U.R.normalize({projects:[],assignments:[],payments:[]});U.saveFinance(d,acc,{baseRevision:0,payload});assert.throws(()=>U.saveFinance(d,acc,{baseRevision:0,payload}),e=>e.status===409);assert.throws(()=>U.saveFinance(d,engineer,{baseRevision:1,payload}),e=>e.status===403);assert.throws(()=>U.saveFinance(d,acc,{baseRevision:1,payload:{projects:'wrong'}}));});
 test('migration preview is read only and does not infer matches by project name',()=>{const d=fixture(),before=JSON.stringify(d),payload=U.R.normalize({projects:[{code:'other',name:'Test Project',client:'Test Customer',contract:200}],assignments:[],payments:[]});const report=U.migration(payload,d);assert.equal(report.kind,'finance-v20');assert.equal(report.matches.length,0);assert.equal(report.unmatched.length,1);assert.equal(JSON.stringify(d),before);});
+test('finance import adds only new records and preserves the current valid database',()=>{
+ const d=fixture(),current=financePayload(),incoming=financePayload({code:'FIN-2',client:'Finance Client B',customerId:'FC-2',name:'Finance Project B',assignmentId:'AS-2',paymentId:'PAY-2',documentId:'SEQ-2',documentNumber:2});
+ U.saveFinance(d,owner,{baseRevision:0,payload:current});const before=JSON.parse(JSON.stringify(U.root(d).finance.payload)),preview=U.financeImportPreview(d,owner,incoming);
+ assert.equal(preview.conflicts.length,0);assert.equal(preview.add.projects,1);assert.equal(preview.add.customers,1);assert.equal(preview.counts.candidate.projects,2);
+ const result=U.financeImportCommit(d,owner,incoming,preview),merged=U.root(d).finance.payload;
+ assert.equal(result.replayed,false);assert.equal(merged.projects.length,2);assert.equal(merged.customers.length,2);assert.deepEqual(merged.projects.find(x=>x.code==='FIN-1'),before.projects[0]);assert.deepEqual(merged.payments.find(x=>x.id==='PAY-1'),before.payments[0]);
+});
+test('finance import treats identical data as identical and replays the same import once',()=>{
+ const d=fixture(),payload=financePayload();U.saveFinance(d,owner,{baseRevision:0,payload});const preview=U.financeImportPreview(d,owner,payload);
+ assert.equal(preview.conflicts.length,0);assert.equal(preview.add.projects,0);assert.equal(preview.identical.projects,1);assert.equal(preview.identical.payments,1);
+ const first=U.financeImportCommit(d,owner,payload,preview),revision=U.root(d).finance.revision,counts={projects:U.root(d).finance.payload.projects.length,payments:U.root(d).finance.payload.payments.length,imports:U.root(d).imports.length};
+ const second=U.financeImportCommit(d,owner,payload,preview);
+ assert.equal(first.replayed,false);assert.equal(second.replayed,true);assert.equal(U.root(d).finance.revision,revision);assert.deepEqual({projects:U.root(d).finance.payload.projects.length,payments:U.root(d).finance.payload.payments.length,imports:U.root(d).imports.length},counts);
+});
+test('finance import blocks changed IDs, normalized customer aliases and document number collisions',()=>{
+ const setup=()=>{const d=fixture();U.saveFinance(d,owner,{baseRevision:0,payload:financePayload()});return d};
+ let d=setup(),incoming=financePayload({paymentAmount:31}),preview=U.financeImportPreview(d,owner,incoming);assert.ok(preview.conflicts.some(x=>x.collection==='payments'));assert.throws(()=>U.financeImportCommit(d,owner,incoming,preview),e=>e.status===409);
+ d=setup();incoming=U.R.validate(U.R.normalize({projects:[],assignments:[],payments:[],customers:[{id:'FC-OTHER',name:'FINANCE CLIENT',phone:'',email:'',note:''}]}));preview=U.financeImportPreview(d,owner,incoming);assert.ok(preview.conflicts.some(x=>x.collection==='customers'));assert.throws(()=>U.financeImportCommit(d,owner,incoming,preview),e=>e.status===409);
+ d=setup();incoming=U.R.validate(U.R.normalize({projects:[],assignments:[],payments:[],documentNumbers:[{id:'SEQ-OTHER',kind:'payment',number:1}]}));preview=U.financeImportPreview(d,owner,incoming);assert.ok(preview.conflicts.some(x=>x.collection==='documentNumbers'));assert.throws(()=>U.financeImportCommit(d,owner,incoming,preview),e=>e.status===409);
+});
+test('finance import preserves the linked project source and link identity',()=>{
+ const d=fixture(),current=financePayload({code:'PRJ-101',client:'Test Customer',customerId:'C1',unifiedSourceId:'DOC-APPROVED'});U.saveFinance(d,owner,{baseRevision:0,payload:current});U.link(d,owner,{baseRevision:1,projectId:'PRJ-101',financeCode:'PRJ-101'});
+ const incoming=financePayload({code:'PRJ-101',client:'Test Customer',customerId:'C1'}),preview=U.financeImportPreview(d,owner,incoming);assert.equal(preview.conflicts.length,0);assert.equal(preview.identical.projects,1);
+ U.financeImportCommit(d,owner,incoming,preview);assert.equal(U.root(d).finance.payload.projects[0].unifiedSourceId,'DOC-APPROVED');assert.deepEqual(U.root(d).links.map(x=>[x.projectId,x.financeCode]),[['PRJ-101','PRJ-101']]);
+});
 test('server financial helpers are exact copies of the approved embedded engines',()=>{
  const source=fs.readFileSync(path.join(__dirname,'../erp/site/modules/finance.html'),'utf8');
  for(const [name,file] of [['R14','finance-v20-core.js'],['R18Clients','finance-v20-clients.js']]){
@@ -77,15 +103,26 @@ test('live HTTP authentication, CSRF, roles, shared revisions, restart persisten
  assert.equal((await call('/api/unified/finance',finance,b)).status,409);
  assert.equal((await call('/api/unified/finance',null,b)).json.revision,1);
  const report=await call('/api/unified/migration-preview',{backup:finance.payload},a);assert.equal(report.json.readOnly,true);
+ const importBackup=financePayload({code:'HTTP-FIN-1',client:'HTTP Finance Client',customerId:'HTTP-FC-1',name:'HTTP Finance Project',assignmentId:'HTTP-AS-1',paymentId:'HTTP-PAY-1',documentId:'HTTP-SEQ-1',documentNumber:101});
+ const beforeImport=(await call('/api/unified/finance',null,a)).json,importPreview=await call('/api/unified/finance-import-preview',{backup:importBackup},a);assert.equal(importPreview.status,200);assert.equal(importPreview.json.conflicts.length,0);
+ const afterPreview=(await call('/api/unified/finance',null,a)).json;assert.equal(afterPreview.revision,beforeImport.revision);assert.equal(afterPreview.baseRevision,beforeImport.baseRevision);assert.deepEqual(afterPreview.payload,beforeImport.payload);
+ const importRequest={backup:importBackup,confirm:true,importHash:importPreview.json.importHash,previewHash:importPreview.json.previewHash,financeRevision:importPreview.json.financeRevision,baseRevision:importPreview.json.baseRevision};
+ const imported=await call('/api/unified/finance-import-commit',importRequest,a);assert.equal(imported.status,200);assert.equal(imported.json.replayed,false);
+ const afterImport=(await call('/api/unified/finance',null,a)).json;assert.equal(afterImport.payload.projects.filter(x=>x.code==='HTTP-FIN-1').length,1);assert.equal(afterImport.payload.payments.filter(x=>x.id==='HTTP-PAY-1').length,1);
+ const replayed=await call('/api/unified/finance-import-commit',importRequest,a);assert.equal(replayed.status,200);assert.equal(replayed.json.replayed,true);
+ const afterReplay=(await call('/api/unified/finance',null,a)).json;assert.equal(afterReplay.baseRevision,afterImport.baseRevision);assert.equal(afterReplay.revision,afterImport.revision);assert.equal(afterReplay.payload.projects.filter(x=>x.code==='HTTP-FIN-1').length,1);assert.equal(afterReplay.payload.payments.filter(x=>x.id==='HTTP-PAY-1').length,1);
+ const secondBackup=financePayload({code:'HTTP-FIN-2',client:'HTTP Finance Client 2',customerId:'HTTP-FC-2',name:'HTTP Finance Project 2',assignmentId:'HTTP-AS-2',paymentId:'HTTP-PAY-2',documentId:'HTTP-SEQ-2',documentNumber:102}),secondPreview=await call('/api/unified/finance-import-preview',{backup:secondBackup},a);assert.equal(secondPreview.status,200);
+ const concurrent=await call('/api/customers',{baseRevision:secondPreview.json.baseRevision,requestId:'12345678-1234-1234',name:'Concurrent Customer'},a);assert.equal(concurrent.status,200);
+ const stale=await call('/api/unified/finance-import-commit',{backup:secondBackup,confirm:true,importHash:secondPreview.json.importHash,previewHash:secondPreview.json.previewHash,financeRevision:secondPreview.json.financeRevision,baseRevision:secondPreview.json.baseRevision},a);assert.equal(stale.status,409);assert.equal((await call('/api/unified/finance',null,a)).json.payload.projects.some(x=>x.code==='HTTP-FIN-2'),false);
  const workspace=await call('/api/workspace',null,a);assert.equal(workspace.status,200);
- const savedBackup=(await call('/api/backup',null,a)).json;assert.equal(savedBackup.extensions.unified.finance.revision,1);
- await call('/api/unified/finance',{baseRevision:1,payload:{...finance.payload,testMarker:'after-backup'}},a);
+ const savedBackup=(await call('/api/backup',null,a)).json;assert.equal(savedBackup.extensions.unified.finance.revision,2);
+ await call('/api/unified/finance',{baseRevision:2,payload:{...savedBackup.extensions.unified.finance.payload,testMarker:'after-backup'}},a);
  const preview=await call('/api/restore-preview',{backup:savedBackup},a);assert.equal(preview.status,200);
  const restoredBackup=await call('/api/restore',{backup:savedBackup,previewHash:preview.json.hash,confirm:true,baseRevision:(await call('/api/workspace',null,a)).json.revision},a);assert.equal(restoredBackup.status,200);
- assert.equal((await call('/api/unified/finance',null,a)).json.revision,1);
+ assert.equal((await call('/api/unified/finance',null,a)).json.revision,2);
  const freshEngineer=await login('eng');
  for(const route of ['/modules/finance.html','/modules/commercial.html']){const r=await fetch(base+route,{headers:{cookie:freshEngineer.cookie}});assert.equal(r.status,403);}
  assert.equal((await call('/api/password',{oldPassword:'T123',password:'Test-Password-2026'},a)).status,200);
- await stop();await start(true);assert.equal((await call('/api/login',{id:'owner',password:'T123'})).status,401);const restored=await login('owner','Test-Password-2026');assert.equal((await call('/api/health')).json.passwordMinLength,12);assert.equal((await call('/api/password',{oldPassword:'Test-Password-2026',password:'1234'},restored)).status,400);assert.equal((await call('/api/unified/finance',null,restored)).json.revision,1);
+ await stop();await start(true);assert.equal((await call('/api/login',{id:'owner',password:'T123'})).status,401);const restored=await login('owner','Test-Password-2026');assert.equal((await call('/api/health')).json.passwordMinLength,12);assert.equal((await call('/api/password',{oldPassword:'Test-Password-2026',password:'1234'},restored)).status,400);assert.equal((await call('/api/unified/finance',null,restored)).json.revision,2);
  assert.equal((await call('/api/backup',null,restored)).status,200);
 });

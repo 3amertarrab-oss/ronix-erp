@@ -7,7 +7,7 @@ function fail(message, status=400) { const e=Error(message); e.status=status; e.
 function check(test,message,status) { if(!test) fail(message,status); }
 const accounting = u => ['Owner','Accountant'].includes(u.role);
 const commercial = u => ['Owner','Project Manager','Accountant'].includes(u.role);
-function root(d) { return d.extensions?.unified || {version:1,finance:{revision:0,payload:null},commercial:{revision:0,documents:[]},links:[]}; }
+function root(d) { return d.extensions?.unified || {version:2,finance:{revision:0,payload:null},commercial:{revision:0,documents:[]},links:[],imports:[]}; }
 function writable(d) { d.extensions ||= {}; return d.extensions.unified ||= copy(root(d)); }
 function allowed(u,area,write=false) { check(area==='finance'?accounting(u):commercial(u),'هذا القسم غير متاح لدورك',403); if(write&&area==='approve')check(['Owner','Project Manager'].includes(u.role),'اعتماد المستند للمالك أو مدير المشروعات',403); }
 function revision(actual,expected) { check(Number.isInteger(expected)&&actual===expected,'توجد تعديلات أحدث على الخادم. نزّل نسخة تعديلاتك ثم أعد تحميل أحدث نسخة.',409); }
@@ -15,6 +15,112 @@ function catalog(d) { return {projects:d.data.filter(p=>!p.removedAt).map(p=>({i
 function read(d,u,area) { allowed(u,area); const a=root(d),result={...copy(a[area]),...catalog(d),links:copy(a.links),role:u.role};if(area==='commercial')for(const doc of result.documents){const native=d.commercial[doc.draft.state.kind==='quote'?'quotes':'contracts'].find(x=>x.id===doc.id);doc.lifecycle=native?.removedAt?'removed':native?.documentArchived?'archived':native?.status||doc.status;}return result; }
 function mediaReferences(value) {let count=0;const visit=v=>{if(!v||typeof v!=='object')return;if(v.$ronixBlob)count++;for(const x of Object.values(v))visit(x);};visit(value);return count;}
 function validateFinance(value) { try { return R.validate(value); } catch(e) { fail(e.message); } }
+function canonical(value) {
+ if(Array.isArray(value))return value.map(x=>x===undefined?null:canonical(x));
+ if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().filter(k=>value[k]!==undefined).map(k=>[k,canonical(value[k])]));
+ return value;
+}
+function fingerprint(value) { return crypto.createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex'); }
+const financeAttachmentKeys=['receiptAttachments','paymentAttachments'];
+const financeAuditCollections=new Set(['auditTrail','costAudit']);
+const financeEphemeralMetadata=new Set(['exportedAt']);
+function financeFingerprint(value) { return fingerprint(Object.fromEntries(Object.entries(value).filter(([key])=>!financeEphemeralMetadata.has(key)))); }
+const financeNameKey=value=>String(value??'').trim().replace(/\s+/g,' ').normalize('NFC').toLocaleLowerCase('en');
+function financeKeys(collection,row) {
+ const id=row&&typeof row.id==='string'&&row.id?row.id:'';
+ if(collection==='projects')return ['code:'+String(row?.code??'')];
+ if(collection==='customers')return ['id:'+id,'name:'+financeNameKey(row?.name)].filter(x=>!x.endsWith(':'));
+ if(collection==='assignments')return [id&&'id:'+id,'pair:'+String(row?.code??'')+'::'+financeNameKey(row?.designer)].filter(Boolean);
+ if(collection==='documentNumbers')return ['id:'+String(row?.kind??'')+':'+String(row?.id??''),'number:'+String(row?.kind??'')+':'+String(row?.number??'')];
+ if(collection==='openingBalances')return [id?'id:'+id:'client:'+financeNameKey(row?.client)];
+ if(collection==='claimSettlements')return [id?'id:'+id:'settlement:'+String(row?.claimId??'')+'::'+String(row?.receiptId??'')+'::'+String(row?.code??'')];
+ if(collection==='deletedPayments')return [id?'id:'+id:'payment:'+String(row?.payment?.id??'')];
+ if(collection==='archivedDesigners')return [id?'id:'+id:'designer:'+financeNameKey(row?.name)];
+ if(collection==='closingRates')return [id?'id:'+id:'rate:'+String(row?.currency??'')+'::'+String(row?.date??'')];
+ if(collection==='fiscalClosings')return [id?'id:'+id:'period:'+String(row?.from??'')+'::'+String(row?.to??'')];
+ return [id?'id:'+id:'fingerprint:'+fingerprint(row)];
+}
+function financeCounts(value) {
+ const out=Object.fromEntries(R.arrays.map(k=>[k,value[k].length]));
+ for(const k of financeAttachmentKeys)out[k]=Object.keys(value[k]||{}).length;
+ return out;
+}
+function financeTotals(value) {
+ const originalByCurrency={};for(const p of value.projects){const currency=R.projectCurrency(p);originalByCurrency[currency]=R.sum([{amount:originalByCurrency[currency]||0},{amount:R.projectOriginalTotal(p)}]);}
+ const activeClaims=value.claims.filter(R.active),unallocated=value.clientReceipts.filter(r=>!r.code);
+ return {
+  contracts:{book:R.sum(value.projects,p=>R.projectBookTotal(p)),originalByCurrency},
+  designers:{obligations:R.sum(value.assignments,a=>R.assignmentTotal(a)),payments:R.sum(value.payments)},
+  claims:{all:R.sum(value.claims,'total'),active:R.sum(activeClaims,'total'),draftOrInactive:R.sum(value.claims.filter(x=>!R.active(x)),'total')},
+  receipts:{book:R.sum(value.clientReceipts),cash:R.sum(value.clientReceipts,r=>R.cashReceipt(r)),unallocated:R.sum(unallocated),unallocatedCount:unallocated.length},
+  settlements:R.sum(value.claimSettlements),
+  media:{projectPhotos:value.projects.reduce((n,p)=>n+(p.photos||[]).length,0),receiptAttachments:Object.keys(value.receiptAttachments||{}).length,paymentAttachments:Object.keys(value.paymentAttachments||{}).length}
+ };
+}
+function financeMergePlan(d,u,value) {
+ allowed(u,'finance');check(u.role==='Owner','دمج نسخة الحسابات للمالك فقط',403);
+ const incoming=validateFinance(value?.doc||value),a=root(d),current=validateFinance(a.finance.payload||{projects:[],assignments:[],payments:[]});
+ const importHash=financeFingerprint(incoming),currentHash=financeFingerprint(current),candidate=copy(current);
+ const names=[...R.arrays,...financeAttachmentKeys,'_metadata'],add=Object.fromEntries(names.map(k=>[k,0])),identical=Object.fromEntries(names.map(k=>[k,0])),conflicts=[];
+ const conflict=(collection,key,reason)=>conflicts.push({collection,key:String(key||''),reason});
+ for(const collection of R.arrays){
+  candidate[collection]??=[];
+  for(const source of incoming[collection]){
+   if(financeAuditCollections.has(collection)){
+    const hash=fingerprint(source);if(candidate[collection].some(row=>fingerprint(row)===hash))identical[collection]++;else{candidate[collection].push(copy(source));add[collection]++;}continue;
+   }
+   const keys=financeKeys(collection,source),matches=candidate[collection].filter(row=>financeKeys(collection,row).some(key=>keys.includes(key)));
+   if(matches.length>1){conflict(collection,keys.join('|'),'المفتاح يطابق أكثر من سجل حالي');continue;}
+   if(!matches.length){const row=copy(source);if(collection==='projects')delete row.unifiedSourceId;candidate[collection].push(row);add[collection]++;continue;}
+   const existing=matches[0],next=copy(source);
+   if(collection==='projects'){
+    if(existing.unifiedSourceId&&source.unifiedSourceId&&existing.unifiedSourceId!==source.unifiedSourceId){conflict(collection,source.code,'مرجع العقد الموحد الحالي لا يُستبدل');continue;}
+    if(existing.unifiedSourceId)next.unifiedSourceId=existing.unifiedSourceId;else delete next.unifiedSourceId;
+   }
+   if(fingerprint(existing)===fingerprint(next))identical[collection]++;else conflict(collection,keys.join('|'),'السجل موجود بمحتوى مختلف');
+  }
+ }
+ for(const collection of financeAttachmentKeys){
+  candidate[collection]??={};
+  for(const [key,source] of Object.entries(incoming[collection]||{})){
+   if(!Object.prototype.hasOwnProperty.call(candidate[collection],key)){candidate[collection][key]=copy(source);add[collection]++;}
+   else if(fingerprint(candidate[collection][key])===fingerprint(source))identical[collection]++;
+   else conflict(collection,key,'مفتاح المرفق موجود بمحتوى مختلف');
+  }
+ }
+ const managed=new Set([...R.arrays,...financeAttachmentKeys]);
+ for(const [key,source] of Object.entries(incoming))if(!managed.has(key)){
+  if(financeEphemeralMetadata.has(key)&&Object.prototype.hasOwnProperty.call(candidate,key)){identical._metadata++;continue;}
+  if(!Object.prototype.hasOwnProperty.call(candidate,key)){candidate[key]=copy(source);add._metadata++;}
+  else if(fingerprint(candidate[key])===fingerprint(source))identical._metadata++;
+  else conflict('_metadata',key,'قيمة تعريفية حالية لا تُستبدل');
+ }
+ if(!conflicts.length)try{R.validate(candidate)}catch(e){conflict('finance','candidate',e.message);}
+ const counts={current:financeCounts(current),incoming:financeCounts(incoming),candidate:financeCounts(candidate)};
+ const sum=o=>Object.values(o).reduce((n,v)=>n+v,0),recordDelta=o=>Object.entries(o).filter(([key])=>key!=='_metadata').reduce((n,[,v])=>n+v,0),totals={records:{current:sum(counts.current),incoming:sum(counts.incoming),candidate:sum(counts.candidate),add:recordDelta(add),identical:recordDelta(identical),metadataAdded:add._metadata,metadataIdentical:identical._metadata,conflicts:conflicts.length},financial:{current:financeTotals(current),incoming:financeTotals(incoming),candidate:financeTotals(candidate)}};
+ const financeRevision=Number(a.finance?.revision)||0,candidateHash=financeFingerprint(candidate);
+ const previewHash=fingerprint({importHash,currentHash,candidateHash,financeRevision,add,identical,conflicts});
+ return {candidate,summary:{importHash,currentHash,previewHash,financeRevision,counts,add,identical,conflicts,totals}};
+}
+function financeImportPreview(d,u,value) { return financeMergePlan(d,u,value).summary; }
+function financeImportCommit(d,u,value,expected) {
+ allowed(u,'finance',true);check(u.role==='Owner','دمج نسخة الحسابات للمالك فقط',403);
+ const plan=financeMergePlan(d,u,value),a=writable(d);a.imports??=[];
+ const previous=a.imports.find(x=>x&&x.kind==='finance-v20'&&x.importHash===plan.summary.importHash);
+ if(previous)return {replayed:true,importHash:plan.summary.importHash,previewHash:previous.previewHash,financeRevision:a.finance.revision,import:copy(previous)};
+ const wanted=typeof expected==='string'?expected:expected?.previewHash;
+ check(typeof wanted==='string'&&wanted===plan.summary.previewHash,'تغيرت بيانات الدمج بعد المعاينة؛ أعد المعاينة قبل الاعتماد',409);
+ if(expected&&typeof expected==='object'){
+  if(expected.importHash!==undefined)check(expected.importHash===plan.summary.importHash,'ملف الاستيراد لا يطابق المعاينة',409);
+  if(expected.currentHash!==undefined)check(expected.currentHash===plan.summary.currentHash,'تغيرت قاعدة الحسابات بعد المعاينة',409);
+  if(expected.financeRevision!==undefined)check(expected.financeRevision===plan.summary.financeRevision,'تغير إصدار الحسابات بعد المعاينة',409);
+ }
+ check(!plan.summary.conflicts.length,'توجد تعارضات في نسخة الحسابات؛ راجع المعاينة دون استبدال السجلات الحالية',409);
+ const from=plan.summary.financeRevision,to=from+1,at=new Date().toISOString();
+ a.version=Math.max(2,Number(a.version)||1);a.finance={revision:to,payload:plan.candidate,updatedAt:at,updatedBy:u.id};
+ const record={id:'FIN-IMPORT-'+plan.summary.importHash.slice(0,16),kind:'finance-v20',importHash:plan.summary.importHash,currentHash:plan.summary.currentHash,previewHash:plan.summary.previewHash,financeRevisionFrom:from,financeRevisionTo:to,counts:copy(plan.summary.counts.incoming),add:copy(plan.summary.add),identical:copy(plan.summary.identical),totals:copy(plan.summary.totals),importedAt:at,importedBy:u.id};
+ a.imports.push(record);return {replayed:false,importHash:record.importHash,previewHash:record.previewHash,financeRevision:to,counts:copy(record.counts),add:copy(record.add),identical:copy(record.identical),totals:copy(record.totals),import:copy(record)};
+}
 function saveFinance(d,u,b) {
  allowed(u,'finance',true); const a=writable(d); revision(a.finance.revision,b.baseRevision);
  const payload=validateFinance(b.payload),codes=new Set(payload.projects.map(p=>p.code));
@@ -168,4 +274,4 @@ function migration(value,d) {
  else fail('تنسيق النسخة غير معروف');
  result.warnings.push('هذا فحص فقط؛ لم يتم استيراد أو اعتماد أو تسوية أي سجل.');return result;
 }
-module.exports={R,root,read,saveFinance,saveDocument,approve,link,handoff,projection,syncIdentity,migration,amounts,paymentAmounts,accounting,commercial};
+module.exports={R,root,read,saveFinance,financeImportPreview,financeImportCommit,saveDocument,approve,link,handoff,projection,syncIdentity,migration,amounts,paymentAmounts,accounting,commercial};

@@ -37,7 +37,7 @@ function cookie(req){const prefix=sessionCookieName(req)+'=';const raw=String(re
 function current(req){const id=cookie(req),s=sessions.get(id);if(!s||s.expiry<Date.now()||s.lastSeen+60*60e3<Date.now()){if(id)sessions.delete(id);throw new AppError('LOGIN_REQUIRED','يرجى تسجيل الدخول',401)}const u=store.doc.teamUsers.find(x=>x.id===s.userId&&x.active!==false);assert(u&&auth.users[u.id]&&auth.users[u.id].active!==false,'LOGIN_REQUIRED','الحساب غير فعال',401);s.lastSeen=Date.now();return {user:u,session:s,token:id}}
 function send(res,status,body,type='application/json; charset=utf-8',extra={}){res.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'SAMEORIGIN','Content-Security-Policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",...extra});res.end(body)}
 function json(res,status,obj,headers={}){send(res,status,JSON.stringify(obj),undefined,headers)}
-function readBody(req,max=24e6){return new Promise((resolve,reject)=>{const chunks=[];let n=0;req.on('data',c=>{n+=c.length;if(n>max){reject(new AppError('BODY_TOO_LARGE','الملف أكبر من الحد المسموح',413));req.destroy()}else chunks.push(c)});req.on('end',()=>{try{resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}'))}catch(_){reject(new AppError('INVALID_JSON','ملف JSON غير صالح'))}});req.on('error',reject)})}
+function readBody(req,max=24e6){return new Promise((resolve,reject)=>{const chunks=[];let n=0,settled=false,tooLarge=false;req.on('data',c=>{if(tooLarge)return;n+=c.length;if(n>max){tooLarge=true;chunks.length=0;settled=true;reject(new AppError('BODY_TOO_LARGE','الملف أكبر من الحد المسموح',413))}else chunks.push(c)});req.on('end',()=>{if(settled)return;try{settled=true;resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}'))}catch(_){settled=true;reject(new AppError('INVALID_JSON','ملف JSON غير صالح'))}});req.on('error',e=>{if(!settled){settled=true;reject(e)}})})}
 function finance(u){assert(D.FINANCE.has(u.role),'FINANCE_FORBIDDEN','البيانات المالية للمالك والحسابات فقط',403)}
 function csrf(req,s){assert(req.headers['x-ronix-csrf']===s.csrf,'CSRF_REQUIRED','تعذر التحقق من جلسة العملية',403)}
 function origin(req){const o=req.headers.origin;if(o){let host;try{host=new URL(o).host}catch(_){throw new AppError('ORIGIN_FORBIDDEN','مصدر غير مسموح',403)}assert(host===req.headers.host,'ORIGIN_FORBIDDEN','مصدر غير مسموح',403)}assert(!['cross-site'].includes(req.headers['sec-fetch-site']),'ORIGIN_FORBIDDEN','مصدر غير مسموح',403)}
@@ -95,8 +95,26 @@ async function handler(req,res){try{
  const {user:actualUser,session:s,token}=current(req);const u=D.Access.effective(actualUser);if(req.method!=='GET')csrf(req,s);
  if(url.pathname.startsWith('/api/unified/')){
    const area=url.pathname.slice('/api/unified/'.length);
-   if(req.method==='GET'&&['finance','commercial'].includes(area))return json(res,200,U.read(store.doc,u,area));
+   if(req.method==='GET'&&['finance','commercial'].includes(area)){const result=U.read(store.doc,u,area);return json(res,200,area==='finance'?{...result,baseRevision:store.revision}:result);}
    if(req.method==='POST'){
+     if(area==='finance-import-preview'){
+       assert(u.role==='Owner','OWNER_ONLY','استيراد الحسابات للمالك فقط',403);const b=await readBody(req,8*1024*1024);
+       const result=U.financeImportPreview(store.doc,u,b.backup);
+       return json(res,200,{...result,baseRevision:store.revision});
+     }
+     if(area==='finance-import-commit'){
+       assert(u.role==='Owner','OWNER_ONLY','استيراد الحسابات للمالك فقط',403);const b=await readBody(req,8*1024*1024);
+       assert(b.confirm===true,'IMPORT_CONFIRM_REQUIRED','راجع معاينة الدمج ثم أكد العملية',400);
+       assert(typeof b.importHash==='string'&&/^[a-f0-9]{64}$/i.test(b.importHash),'IMPORT_HASH_REQUIRED','بصمة ملف الاستيراد مطلوبة',400);
+       assert(typeof b.previewHash==='string'&&b.previewHash.length>=16,'PREVIEW_REQUIRED','راجع معاينة الاستيراد أولًا',400);
+       const root=U.root(store.doc),prior=(root.imports||[]).find(x=>x?.kind==='finance-v20'&&x.importHash===b.importHash);
+       if(prior)return json(res,200,{replayed:true,importHash:prior.importHash,previewHash:prior.previewHash,financeRevision:prior.financeRevisionTo??root.finance.revision,counts:D.clone(prior.counts||{}),add:D.clone(prior.add||{}),identical:D.clone(prior.identical||{}),totals:D.clone(prior.totals||{}),import:D.clone(prior),baseRevision:store.revision});
+       assert(Number.isInteger(b.financeRevision)&&b.financeRevision>=0,'FINANCE_REVISION_REQUIRED','إصدار الحسابات من المعاينة مطلوب',400);
+       revision(b);
+       const doc=D.clone(store.doc),result=U.financeImportCommit(doc,u,b.backup,{importHash:b.importHash,previewHash:b.previewHash,financeRevision:b.financeRevision});
+       D.event(doc,u,'unified_finance_import','',{importHash:result.importHash||b.importHash||'',previewHash:b.previewHash||'',financeRevision:result.financeRevision??b.financeRevision});
+       testAudit(doc,s);const next=commit(doc,{reason:'finance_import'});return json(res,200,{...result,baseRevision:next.revision});
+     }
      const b=await readBody(req);
      if(area==='migration-preview'){assert(u.role==='Owner','OWNER_ONLY','فحص النقل للمالك فقط',403);return json(res,200,U.migration(b.backup,store.doc));}
      const doc=D.clone(store.doc);let result;
