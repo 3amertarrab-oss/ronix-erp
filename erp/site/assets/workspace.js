@@ -920,7 +920,7 @@ async function openCommercial3921(pid,kind='quote',id=''){
 }
 const renderBefore3921=render;
 render=function(){renderBefore3921();if(!ws)return;const v=$('view');
- if(['dash','projects'].includes(route)){
+ if(route==='projects'||route==='dash'&&!v.querySelector('[data-owner-dashboard33],[data-dashboard34]')){
   const ps=route==='projects'&&chosen?ws.projects.filter(p=>p.id===chosen):ws.projects.filter(p=>p.commercialLink?.canManage&&p.commercialLink.state!=='active');
   const missing=ps.filter(p=>p.commercialLink?.canManage&&!v.querySelector(`[data-commercial3921="${CSS.escape(p.id)}"]`));
   if(missing.length)v.insertAdjacentHTML('afterbegin',`<section class="card source-pending3921"><h3>${T('استكمال مرجع المشروع','Project commercial source')}</h3>${missing.map(p=>`<div>${projectMini(p)}${commercialButton3921(p)}</div>`).join('')}</section>`);
@@ -1130,7 +1130,7 @@ drawNav=function(){
 const renderBeforeClean3928=render;
 render=function(){
  renderBeforeClean3928();
- if(!ws||!owner()||route!=='dash'||ws.projects.length||(ws.sources||[]).length)return;
+ if(!ws||role()!=='Owner'||route!=='dash'||ws.projects.length||(ws.sources||[]).length||$('view').querySelector('[data-owner-dashboard33]'))return;
  const people=ws.users.filter(u=>u.id!=='owner').length;
  $('view').innerHTML=head('dash',T('بداية نظيفة — أضف بيانات التجربة بنفسك، دون سجلات قديمة.','A clean start — enter your own trial data, without historical records.'))+
  `<section class="card clean-welcome"><span class="tag good">${T('قاعدة جديدة مستقلة','Independent new database')}</span><h2>${T('ابدأ بفريق صغير ومشروع واحد','Start with a small team and one project')}</h2><p>${T('الخطوات: الفريق ← التعاقد ← توزيع العمل ← التنفيذ والمراجعة ← المطالبة والتحصيل.','Team → agreement → assignment → execution & review → claims & collection.')}</p><div class="clean-start-grid"><article><b>1 · ${T('إعداد الفريق','Set up the team')}</b><p>${T('أضف مدير مشروع ومهندسًا ومراجعًا ومحاسبًا بأسمائهم ورموز دخولهم.','Add a manager, engineer, checker and accountant with their own accounts.')}</p><button data-route-inline="team">${T('إدارة الموظفين','Manage employees')} · ${people}</button></article><article><b>2 · ${T('ضبط أيام العمل والتكلفة','Working calendar & costing')}</b><p>${T('راجع أيام الراحة وبداية الدوام. لا توجد أسعار ساعة مفترضة.','Review working days and start time. No hourly rates are assumed.')}</p><button data-route-inline="timeReports">${T('تقويم العمل والساعات','Calendar & time')}</button><button data-route-inline="rates">${T('إعداد تكلفة الساعة','Configure hourly cost')}</button></article><article><b>3 · ${T('إنشاء أول مشروع','Create the first project')}</b><p>${T('أدخل العميل ونطاقًا واضحًا، ثم اربط عرض سعر أو عقدًا معتمدًا.','Add the client and precise scope, then link an approved quotation or contract.')}</p><button class="primary" data-route-inline="projects">${T('فتح المشاريع','Open projects')}</button><button data-route-inline="commercial">${T('العروض والعقود','Quotes & contracts')}</button></article></div><p class="muted">${T('التشغيل التالي يحتفظ بما تسجله؛ لا يعيد تصفيره. البيانات القديمة ليست ضمن هذه القاعدة.','Later launches retain your entries; they do not reset them. Old data is not part of this database.')}</p></section>`;
@@ -1241,7 +1241,20 @@ function bindOwner33(){
  if(!['Owner','Project Manager'].includes(role()))return;
  const view=$('view');
  if(ownerClock33.snapshot!==ws)ownerClock33={snapshot:ws,at:performance.now()};
+ const hero=view.querySelector('.o34-hero-copy');if(hero&&!hero.querySelector('[data-o34-search]')){
+  const rows=[...(ws.projects||[]).map(p=>({key:[p.id,p.name,p.client].join(' '),label:p.name||p.id,meta:p.id,open:p.id})),...(ws.customers||[]).map(x=>({key:[x.id,x.name,x.phone,x.email].join(' '),label:x.name||x.id,meta:T('عميل','Customer'),route:'customers'})),...(ws.sources||[]).map(s=>({key:[s.number,s.projectName,s.customerName,s.projectId].join(' '),label:s.number||s.projectName,meta:T('عرض / عقد','Quote / contract'),route:'commercial'}))].slice(0,500);
+  const html=rows.map(x=>`<button type="button" hidden data-o34-key="${E(String(x.key).toLocaleLowerCase())}" ${x.open?`data-o33-open="${E(x.open)}"`:`data-route-inline="${E(x.route)}"`}><b>${E(x.label)}</b><small><bdi dir="ltr">${E(x.meta)}</bdi></small></button>`).join('');
+  hero.querySelector('.o34-live')?.insertAdjacentHTML('beforebegin',`<div class="o34-search"><input type="search" data-o34-search autocomplete="off" placeholder="${T('ابحث باسم المشروع أو العميل أو رقم العقد…','Search project, customer or contract number…')}" aria-label="${T('بحث سريع','Quick search')}"><div class="o34-search-results" data-o34-results hidden>${html}<p data-o34-empty hidden>${T('لا توجد نتيجة مطابقة','No matching result')}</p></div></div>`);
+ }
+ const live=view.querySelector('.o34-live');if(live)live.innerHTML=`<i></i>${T('آخر مراجعة محفوظة في قاعدة CRM','Latest revision saved in CRM')} · ${E(ws.revision)}`;
+ const commercial=view.querySelector('.o34-quick [data-route-inline="commercial"]');if(commercial)commercial.textContent=T('العروض والعقود','Quotes & contracts');
+ const order=view.querySelector('.o34-quick [data-project-new394]');if(order){order.removeAttribute('data-project-new394');order.textContent=T('إصدار أمر تشغيل','Issue work order');order.onclick=()=>navigate('orders');}
+ const receipt=view.querySelector('.o34-quick [data-route-inline="collections"]');if(receipt){receipt.removeAttribute('data-route-inline');receipt.textContent=T('+ تسجيل قبض','+ Record receipt');receipt.onclick=()=>receiptModal('');}
+ const badge=view.querySelector('.o34-badge');if(badge){badge.textContent=view.querySelectorAll('.o34-alert').length;badge.title=T('أنواع إجراءات تحتاج متابعة','Action categories needing attention');}
+ const projectsTitle=view.querySelector('.o34-projects .o34-section-head h2');if(projectsTitle)projectsTitle.textContent=T('مشروعات تحتاج متابعة','Projects needing attention');
+ view.querySelectorAll('.o34-progress b').forEach(x=>{if(x.textContent.trim()==='—%')x.textContent='—';});
  view.querySelectorAll('[data-o33-open]').forEach(b=>b.onclick=()=>navigate('projects',b.dataset.o33Open));
+ view.querySelectorAll('.o34-search-results [data-route-inline]').forEach(b=>b.onclick=()=>navigate(b.dataset.routeInline));
  view.querySelectorAll('[data-o33-follow]').forEach(b=>b.onclick=()=>flowRequest3922(b.dataset.o33Follow));
  view.querySelectorAll('[data-o33-manage]').forEach(b=>b.onclick=async()=>{
   const pid=b.dataset.o33Manage;
@@ -1251,6 +1264,7 @@ function bindOwner33(){
  });
  view.querySelectorAll('[data-o33-keep]').forEach(d=>{const key=session.user.id+':'+d.dataset.o33Keep;if(ownerOpenState33.has(key))d.open=ownerOpenState33.get(key);d.ontoggle=()=>ownerOpenState33.set(key,d.open);});
  view.querySelectorAll('[data-o33-filter]').forEach(s=>{const key=session.user.id+':filter:'+s.dataset.o33Filter;s.value=ownerOpenState33.get(key)||'';if(s.selectedIndex<0)s.value='';const apply=()=>{ownerOpenState33.set(key,s.value);s.closest('[data-o33-journey]').querySelectorAll('[data-o33-scope]').forEach(r=>r.hidden=!!s.value&&r.dataset.o33Scope!==s.value);};s.onchange=apply;apply();});
+ const search=view.querySelector('[data-o34-search]'),results=view.querySelector('[data-o34-results]');if(search&&results){const rows=[...results.querySelectorAll('[data-o34-key]')],empty=results.querySelector('[data-o34-empty]');search.oninput=()=>{const q=search.value.trim().toLocaleLowerCase(),words=q.split(/\s+/).filter(Boolean);let shown=0;for(const row of rows){const match=!!q&&words.every(word=>row.dataset.o34Key.includes(word));row.hidden=!(match&&shown++<8)}if(empty)empty.hidden=!q||shown>0;results.hidden=!q};}
 }
 const bindControlsBefore33=bindControls;bindControls=function(){bindControlsBefore33();bindOwner33();};
 const renderBefore33=render;render=function(){renderBefore33();bindOwner33();};

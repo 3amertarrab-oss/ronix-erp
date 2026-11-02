@@ -31,6 +31,16 @@ try:
         page.on('dialog',lambda d:d.accept())
         page.goto(base+'/')
         page.locator('#shell').wait_for(state='visible')
+        page.locator('[data-owner-dashboard33] .o34-modules').wait_for()
+        assert page.locator('.o34-module').count()==5
+        assert page.locator('.source-pending3921').count()==0
+        artifacts=ROOT/'artifacts';artifacts.mkdir(exist_ok=True)
+        page.screenshot(path=str(artifacts/'desktop-command-center.png'),full_page=True)
+        page.locator('[data-o34-search]').fill('Test Project')
+        page.locator('.o34-search-results [data-o33-open]:visible').click()
+        page.locator('[data-owner-detail33]').wait_for()
+        page.locator('#navigation [data-route="dash"]').click()
+        page.locator('[data-owner-dashboard33] .o34-modules').wait_for()
         page.locator('#navigation [data-route="commercial"]').click()
         frame=page.frame_locator('#unifiedFrame')
         frame.locator('#sharedStatus').get_by_text('مسودة',exact=True).wait_for()
@@ -88,6 +98,11 @@ try:
         mobile=browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
         mobile.request.post(base+'/api/login',data={'id':'owner','password':'T123'})
         mp=mobile.new_page();mp.on('pageerror',lambda e:errors.append(str(e)))
+        mp.goto(base+'/')
+        mp.locator('[data-owner-dashboard33] .o34-modules').wait_for()
+        assert mp.locator('.o34-module').count()==5
+        assert mp.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth')
+        mp.screenshot(path=str(artifacts/'mobile-command-center.png'),full_page=True)
         mp.goto(base+'/modules/commercial.html?project=PRJ-101')
         mp.wait_for_function('() => window.RonixSharedCommercial')
         assert mp.locator('#sharedProject').input_value()=='PRJ-101'
@@ -97,11 +112,10 @@ try:
         assert mp.locator('.side').is_visible()
         mp.locator('.nav[data-page="projects"]').click()
         assert not mp.locator('.side').is_visible()
-        artifacts=ROOT/'artifacts';artifacts.mkdir(exist_ok=True)
         page.screenshot(path=str(artifacts/'desktop-accounts.png'),full_page=True)
         mp.screenshot(path=str(artifacts/'mobile-accounts.png'),full_page=True)
         assert not errors,errors
-        print(json.dumps({'status':'PASS','checks':['ERP navigation','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile editor load'],'pageErrors':errors},ensure_ascii=False))
+        print(json.dumps({'status':'PASS','checks':['dynamic owner command center','ERP navigation','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile editor load'],'pageErrors':errors},ensure_ascii=False))
         browser.close()
 finally:
     if proc:
