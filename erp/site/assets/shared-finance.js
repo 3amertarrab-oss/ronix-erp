@@ -94,7 +94,7 @@ const R20Cloud={state:{user:null}};
  try{
   session=await api('session');R20Cloud.state.user={id:session.user.id,email:session.user.role==='Owner'?'3amertarrab@gmail.com':''};
   await refresh();document.body.classList.remove('r20-locked');
-  if(new URLSearchParams(location.search).get('page')==='claims')go('claims');
+  const requestedPage=new URLSearchParams(location.search).get('page');if(['dashboard','projects','designers','payments','clients','claims','advanced','reports'].includes(requestedPage))go(requestedPage);
   if(session.user.role!=='Owner')bar.querySelector('#sharedMigration').hidden=true;
   setInterval(async()=>{if(pending||inflight||blocked||document.hidden||document.querySelector('#overlay.open'))return;try{const latest=await api('unified/finance');if(latest.revision!==revision)await refresh();}catch(e){status('تعذر التحديث: '+e.message);}},10000);
  }catch(e){status(e.message);const error=document.createElement('p');error.setAttribute('role','alert');error.textContent=e.message;document.body.prepend(error);document.querySelectorAll('.nav').forEach(b=>b.disabled=true);}

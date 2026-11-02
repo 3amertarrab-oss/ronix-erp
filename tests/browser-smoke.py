@@ -31,6 +31,8 @@ try:
         page.on('dialog',lambda d:d.accept())
         page.goto(base+'/')
         page.locator('#shell').wait_for(state='visible')
+        def nav_to(route):
+            page.locator(f'#navigation [data-route="{route}"]').evaluate("e=>{e.closest('details')?.setAttribute('open','');e.click()}")
         page.locator('[data-owner-dashboard33] .o34-modules').wait_for()
         assert page.locator('.o34-module').count()==5
         assert page.locator('.source-pending3921').count()==0
@@ -39,9 +41,9 @@ try:
         page.locator('[data-o34-search]').fill('Test Project')
         page.locator('.o34-search-results [data-o33-open]:visible').click()
         page.locator('[data-owner-detail33]').wait_for()
-        page.locator('#navigation [data-route="dash"]').click()
+        nav_to('dash')
         page.locator('[data-owner-dashboard33] .o34-modules').wait_for()
-        page.locator('#navigation [data-route="commercial"]').click()
+        nav_to('commercial')
         frame=page.frame_locator('#unifiedFrame')
         frame.locator('#sharedStatus').get_by_text('مسودة',exact=True).wait_for()
         frame.locator('#sharedProject').select_option('PRJ-101')
@@ -66,14 +68,14 @@ try:
         frame.locator('#sharedStatus').get_by_text('تم الاعتماد وربط المستند بالبرنامج الأساسي ✓',exact=True).wait_for()
         frame.locator('#sharedHandoff').click()
         frame.locator('#sharedStatus').get_by_text('تم إنشاء مرجع العقد في الحسابات وربطه بالمشروع ✓',exact=True).wait_for()
-        page.locator('#navigation [data-route="fin"]').click()
+        nav_to('fin')
         page.wait_for_function("() => document.querySelector('#unifiedFrame')?.getAttribute('src').includes('/modules/finance.html')")
         page.frame_locator('#unifiedFrame').locator('#sharedStatus').wait_for()
         ff=next(f for f in page.frames if '/modules/finance.html' in f.url)
         ff.wait_for_function("() => document.querySelector('#sharedStatus')?.textContent.includes('متصل')")
         assert ff.locator('body').evaluate("e=>e.classList.contains('ronix-embedded')")
-        side_box=ff.locator('.side').bounding_box()
-        assert side_box and side_box['height']<100 and side_box['width']>900,side_box
+        assert page.locator('.module-tabs [data-finance-page]').count()==8
+        assert not ff.locator('.side').is_visible()
         assert ff.evaluate('data.projects[0].contract')==200
         # Existing save reconciles and audits; our adapter changes persistence only.
         ff.evaluate("data.projects[0].note='browser-persistence';save()")
