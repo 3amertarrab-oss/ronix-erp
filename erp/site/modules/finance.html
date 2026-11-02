@@ -161,8 +161,10 @@ body.ronix-embedded .side .nav span{width:auto;margin-inline-end:5px}
 body.ronix-embedded .main{width:100%;padding:12px 16px 28px}
 body.ronix-embedded .top{justify-content:flex-end;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 body.ronix-embedded .top>div:first-child{display:none}
+body.ronix-embedded .top>.actions{display:none!important}
 body.ronix-embedded .footer{display:none}
 body.ronix-embedded #sharedMenu{display:none!important}
+body.ronix-embedded button[onclick*="editProject"]{display:none!important}
 @media(max-width:720px){body.ronix-embedded .side{display:none!important}body.ronix-embedded .main{padding:10px!important}}
 </style></head><body class="r20-locked"><script>if(new URLSearchParams(location.search).get('embed')==='1')document.body.classList.add('ronix-embedded')</script><div class="layout"><aside class="side"><div><div class="logo">RONIX</div><div class="sublogo">DESIGNER FINANCE</div></div><button class="nav active" data-page="dashboard" onclick="go('dashboard')"><span>◈</span>الرئيسية</button><button class="nav" data-page="projects" onclick="go('projects')"><span>▣</span>المشاريع</button><button class="nav" data-page="designers" onclick="go('designers')"><span>♟</span>المصممون</button><button class="nav" data-page="payments" onclick="go('payments')"><span>▤</span>الدفعات</button><button class="nav" data-page="clients" onclick="go('clients')"><span>◉</span>كشف حساب العملاء</button><button class="nav" data-page="claims" onclick="go('claims')"><span>▤</span>مطالبات العملاء</button><button class="nav" data-page="advanced" onclick="go('advanced')"><span>✦</span>المالية المتقدمة</button><button class="nav" data-page="reports" onclick="go('reports')"><span>▥</span>التقارير</button><div class="sidebar-footer">RONIX ENGINEERING<br>نسخة تشغيل محلية · البيانات تحفظ على هذا المتصفح</div></aside><main class="main"><header class="top"><div><div class="eyebrow">RONIX / PROJECT ACCOUNTS</div><h1 id="title">لوحة التحكم</h1><div class="subtitle" id="sub">إدارة المشروع والمصمم والمدفوعات من مكان واحد</div></div><div class="actions"><button class="btn" onclick="backup()">↓ نسخة احتياطية</button><button class="btn" onclick="document.getElementById('restore').click()">↑ استعادة</button><input id="restore" type="file" accept=".json" hidden onchange="restoreData(this)"><button class="btn gold" onclick="openPayment()">+ دفعة جديدة</button></div></header><section id="content"></section><footer class="footer">RONIX © 2026 · يُرجى الاحتفاظ بنسخة احتياطية منتظمة</footer></main></div><div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modalhead"><h2 id="modalTitle">إضافة</h2><button class="close" onclick="closeModal()">×</button></div><div id="modalBody"></div></div></div><div id="toast" class="toast"></div><script>
 /* RONIX V14. Monetary arithmetic in integer piastres; no network or storage. */
@@ -3110,6 +3112,43 @@ function r24PrintFinancial(){const w=open('','_blank');if(!w)return alert('اس�
 titles.financialStatements=['القوائم المالية والإقفال','ميزان مراجعة، دخل، مركز مالي، تدفقات نقدية وإقفال موثق'];
 const r24FinancialRender=render;render=function(){if(page==='financialStatements'&&!projectFocus&&!designerFocus){$('content').innerHTML=r24FinancialPage();return}return r24FinancialRender()};
 if(!document.querySelector('.nav[data-page="financialStatements"]')){const button=document.createElement('button');button.className='nav';button.dataset.page='financialStatements';button.innerHTML='<span>▥</span>القوائم المالية والإقفال';button.onclick=()=>go('financialStatements');(document.querySelector('.nav[data-page="reports"]')||document.querySelector('.sidebar-footer')).before(button)}
+
+// R42 finance bridge: keep the outer workspace and the embedded engine on the
+// same page and record context without giving cross-origin windows control.
+window.RonixFinanceBridge=(()=>{
+ const parentWindow=window.parent,embedded=parentWindow!==window,query=new URLSearchParams(location.search);
+ let ready=false,customerContext='',customerIdContext=query.get('customer')||'',projectContext=query.get('project')||'',pending={page:query.get('page')||'',project:query.get('project')||'',customer:query.get('customer')||''};
+ const availablePages=()=>new Set([...document.querySelectorAll('.nav[data-page]')].map(x=>x.dataset.page).filter(Boolean));
+ const customerRow=value=>{const key=String(value||'').trim(),norm=R14.normName(key);return key?(data.customers||[]).find(x=>x.id===key||R14.normName(x.name)===norm):null};
+ const customerName=value=>{const key=String(value||'').trim(),norm=R14.normName(key);if(!key)return '';const row=customerRow(key);return row?.name||clientNames().find(x=>R14.normName(x)===norm)||''};
+ const state=()=>{const customer=(page==='clients'?document.getElementById('clientSelect')?.value:'')||customerContext||'',row=customerRow(customer)||customerRow(customerIdContext);return {page,project:projectFocus||projectContext||'',customerId:row?.id||customerIdContext||'',customerName:customer||row?.name||'',title:titles[page]?.[0]||page}};
+ const post=(type='ronix-finance-state',extra={})=>{if(embedded&&(ready||type!=='ronix-finance-state'))parentWindow.postMessage({type,...state(),...extra},location.origin)};
+ const navigationError=(reason,request)=>post('ronix-finance-navigation-error',{reason,request:{page:String(request?.page||''),project:String(request?.project||''),customer:String(request?.customer||'')}});
+ const originalRender=render;
+ function renderProjectClaims(){const p=getP(projectFocus);if(!p){projectFocus='';projectContext='';return originalRender()}const code=r14Encode(p.code);$('content').innerHTML=`<div class="panel"><div class="panel-title"><div><button class="link" onclick="projectFocus='';render()">← كل مطالبات العملاء</button><h2>مطالبات المشروع — ${esc(p.name)}</h2><p class="subtitle">${esc(p.code)} · ${esc(p.client||'بدون عميل')}</p></div><button class="btn primary" onclick="openClaim('${code}')">+ مطالبة للمشروع</button></div></div>${clientProjectPanel(p)}`}
+ render=function(){let result;if(page==='claims'&&projectFocus)result=renderProjectClaims();else{if(page!=='costcenters'&&!projectFocus)projectContext='';result=originalRender()}queueMicrotask(()=>post());return result};
+ const originalGo=go;
+ go=function(target,options={}){const requestedProject=String(options?.project||'');if(!availablePages().has(target)){navigationError('unknown-page',{page:target,project:requestedProject});return false}projectContext='';const result=originalGo(target);customerContext='';customerIdContext='';if(requestedProject&&getP(requestedProject)){projectContext=requestedProject;if(target==='projects'){projectFocus=requestedProject;renderProject()}else if(target==='claims'){projectFocus=requestedProject;render()}else if(target==='costcenters')showCostCenter(encodeURIComponent(requestedProject))}queueMicrotask(()=>post());return result};
+ const originalOpenProject=openProject;
+ openProject=function(encoded){const result=originalOpenProject(encoded);customerContext='';projectContext=projectFocus||'';queueMicrotask(()=>post());return result};
+ const originalShowCostCenter=showCostCenter;
+ showCostCenter=function(encoded){const result=originalShowCostCenter(encoded),code=decodeURIComponent(encoded);projectContext=getP(code)?code:'';queueMicrotask(()=>post());return result};
+ const originalSelectClient=selectClient;
+ selectClient=function(encoded){const result=originalSelectClient(encoded);customerContext=decodeURIComponent(encoded);customerIdContext=customerRow(customerContext)?.id||customerIdContext;projectContext='';queueMicrotask(()=>post());return result};
+ function navigate(request={}){
+  if(!ready){pending={...pending,...request};return false}
+  const requestedProject=String(request.project||''),requestedCustomer=customerName(request.customer),target=String(request.page||'')||(requestedProject?'projects':requestedCustomer?'clients':page);
+  if(!availablePages().has(target)){navigationError('unknown-page',request);return false}
+  if(requestedProject&&!getP(requestedProject)){navigationError('unknown-project',request);return false}
+  if(request.customer&&!requestedCustomer){navigationError('unknown-customer',request);return false}
+  go(target,{project:requestedProject});
+  if(requestedCustomer){customerContext=requestedCustomer;customerIdContext=customerRow(request.customer)?.id||String(request.customer||'');if(target==='clients')selectClient(encodeURIComponent(requestedCustomer));else post()}
+  return true;
+ }
+ function markReady(){if(ready)return;ready=true;const first=pending;pending={};if(first.page||first.project||first.customer)navigate(first);else post();post('ronix-finance-ready')}
+ window.addEventListener('message',event=>{if(!embedded||event.source!==parentWindow||event.origin!==location.origin||event.data?.type!=='ronix-finance-navigate')return;navigate(event.data)});
+ return {markReady,navigate,state,emit:post};
+})();
 
 </script>
 

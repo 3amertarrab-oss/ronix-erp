@@ -24,8 +24,15 @@
  .workspace-breadcrumb{font-size:11px;white-space:normal}
  .page-head h1{font-size:24px}
  .page-head p{font-size:12px}
- .module-tabs{position:relative;top:auto;display:flex;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;padding:7px;scroll-snap-type:x proximity}
- .module-tabs button{flex:0 0 auto;scroll-snap-align:start;padding:8px 12px}
+ .module-tabs{position:relative;top:auto;display:flex;width:100%;max-width:100%;gap:4px;overflow-x:auto;overscroll-behavior-inline:contain;padding:6px;scroll-snap-type:x proximity}
+ .module-tabs button{flex:0 0 auto;scroll-snap-align:start;padding:8px}
+ .action42,.module-tabs .module-more>summary,.context-more42>summary{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+ .module-tabs .module-more>summary{padding:8px}
+ .module-tabs .module-more>div,.context-more42>div{position:fixed;inset:auto 8px 8px 8px;z-index:90;max-height:65dvh;overflow:auto;padding:12px;border-radius:16px;box-shadow:0 -18px 50px #07132155}
+ .module-tabs .module-more>div button,.context-more42>div button{width:100%;min-height:48px}
+ .customer-center42>header{display:block}
+ .customer-center42>header nav{justify-content:flex-start;margin-top:12px}
+ .customer-project-filter42{align-items:stretch;flex-direction:column}
  .unified-module-frame{display:block;width:100%;max-width:100%;height:calc(100dvh - 210px);min-height:600px;border-radius:10px}
  .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
  table{min-width:620px}
