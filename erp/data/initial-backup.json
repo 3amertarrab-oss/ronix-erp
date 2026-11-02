@@ -1,0 +1,48 @@
+{
+  "version": "RONIX-R42.3.9.28-CLEAN-TRIAL-20260925-A",
+  "schemaVersion": 55,
+  "data": [],
+  "timesheets": [],
+  "commercial": {
+    "quotes": [],
+    "contracts": []
+  },
+  "masters": {
+    "customers": [],
+    "vendors": [],
+    "vendorBills": [],
+    "expenses": []
+  },
+  "rates": {},
+  "teamUsers": [
+    {
+      "id": "owner",
+      "name": "المالك",
+      "role": "Owner",
+      "active": true,
+      "rate": 0
+    }
+  ],
+  "awards": [],
+  "vendorPayments": [],
+  "projectImages": {},
+  "projectImageHistory": {},
+  "customerReceipts": [],
+  "projectCostCenters": [],
+  "journalEntries": [],
+  "costRates": [],
+  "extensions": {},
+  "ops": {
+    "orders": [],
+    "notifications": [],
+    "audit": [],
+    "idempotency": {},
+    "claims": []
+  },
+  "cleanTrial": {
+    "id": "3560e235-78e5-42c3-9729-c221ebb47ef8",
+    "initialState": "empty",
+    "sourceVersion": "R42.3.9.27",
+    "policy": "No automatic import. Existing trial data is preserved on later starts."
+  }
+}

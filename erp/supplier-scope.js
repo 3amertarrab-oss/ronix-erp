@@ -1,0 +1,3 @@
+'use strict';
+function work(d,pid){return (d.awards||[]).filter(a=>a.projectId===pid&&a.supplierFlowVersion===1&&a.status==='active'&&!a.removedAt).flatMap(a=>(a.items||[]).map(i=>{const r=(d.supplierFlow?.receipts||[]).find(r=>r.agreementId===a.id&&r.itemId===i.id&&r.status==='accepted');return {agreementId:a.id,itemId:i.id,scopeItemId:i.scopeItemId,description:i.description,vendorId:a.vendorId,vendorName:d.masters.vendors.find(v=>v.id===a.vendorId)?.name||a.vendorId,accepted:!!r,receiptId:r?.id||'',receivedBy:r?.by||'',receivedAt:r?.at||'',additional:!!i.additional};}));}
+module.exports={work};

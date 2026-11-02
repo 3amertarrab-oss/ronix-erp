@@ -1,0 +1,20 @@
+{
+  "version": "R42.3.9.34",
+  "build": "RONIX-R42.3.9.34-WORKFLOW-UX-20260927",
+  "baseline": "R42.3.9.33",
+  "schemaVersion": 56,
+  "releaseStatus": "API_RENDER_LOGIC_AND_LINUX_LAUNCHER_VERIFIED_BROWSER_WINDOWS_PENDING",
+  "financeModules": "Preserved R42 commercial/accounting workbench with guarded receipt, claims and independent project/financial closure",
+  "dataPolicy": "Copy-only upgrade from the current installation. User latest R33 backup retained for recovery; newer local data wins. Login hashes are preserved; no automatic reset.",
+  "uiUpdate": "Compact project journeys, red returned stages, scope support assignments, PM handoff to Accounts, explicit final completion and financial dashboards.",
+  "accessPolicy": "Project management roles merged as Projects Engineer, with requested owner-equivalent permissions under own identity. Supplier technical receipt only by assigned projects engineer.",
+  "uatFocus": "Latest uploaded R33 database: PM delivery and Accounts direction, support scope reassignment, explicit final closure, preserved login hashes.",
+  "verification": "REVIEW/R3934: targeted API and logic tests on uploaded R33 backup. Browser and native Windows status documented separately.",
+  "historicalData": "Only the user-supplied latest R33 backup is bundled for recovery. The update never merges separate databases.",
+  "startupFix": "Select current RONIX folder once; preserve accounts and data in independent upgraded folder.",
+  "supportedSupplierCurrency": "EGP",
+  "supplierTaxRetentionAutomation": false,
+  "nativeWindowsTested": false,
+  "desktopExcelTested": false,
+  "loginFix": "Per-installation and listening-port session cookie isolation; stale async response fencing and same-identity tab session reconciliation."
+}

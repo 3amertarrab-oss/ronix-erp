@@ -1,0 +1,25 @@
+{
+  "approvedRoles": {
+    "base": "R42.3.9.34",
+    "finance": "V20.2",
+    "commercial": "1007"
+  },
+  "sources": [
+    {
+      "filename": "RONIX_1007_Updated.html",
+      "bytes": 591449,
+      "sha256": "cf61cb15c3aad839e161addb54c68daf8654f0d8a56613be97b3d6862f3428a5"
+    },
+    {
+      "filename": "RONIX-V20.2-Update.zip",
+      "bytes": 1950497,
+      "sha256": "e11af2a0ae5b77664c8a3bdc53fcf5a16df4eb12bf71529b8716edf110a57ec2"
+    },
+    {
+      "filename": "RONIX_ERP_R42_3_9_34_WORKFLOW_UX.zip",
+      "bytes": 3706572,
+      "sha256": "92741cba725be32ea54a4ec8a43ed49cd0e83e8de27ee5149817f8e8f79f78ff"
+    }
+  ],
+  "realDataImported": false
+}

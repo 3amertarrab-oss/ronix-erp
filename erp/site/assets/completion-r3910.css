@@ -1,0 +1,9 @@
+/* Scoped only to completion and schedule changes. */
+.handoff3910{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px 20px;background:#fff;border:1px solid #dce5ee;border-inline-start:4px solid #c79732;border-radius:12px;margin:14px 0;color:#183247;}
+.handoff3910 h3{font-size:17px;margin:0 0 7px;}.handoff3910 p{font-size:14px;line-height:1.7;margin:0;max-width:720px;}.handoff3910 .actions{flex-shrink:0;max-width:390px;flex-wrap:wrap;gap:8px;}
+.handoff3910.waiting{background:#fffaf0}.handoff3910.done{border-inline-start-color:#228867;background:#effaf4}
+.handoff3910-records{display:grid;gap:4px;font-size:13px;margin-top:8px;}.handoff3910 button{min-height:40px;white-space:normal;}
+.schedule3910-warning{background:#fff4d9;color:#7e5100;border:1px solid #eacb86;border-inline-start:4px solid #c78b12;border-radius:8px;padding:12px;line-height:1.6;}
+.handoff3910-checklist{margin-top:14px;}.handoff3910-checklist .good{background:#effaf4;}.handoff3910-fin-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,2fr) auto;gap:18px;align-items:center;padding:15px 0;border-top:1px solid #e2eaf1;}.handoff3910-fin-row small{display:block;line-height:1.8;margin-top:4px;}
+#scopeConflict3910 button{margin-inline-start:12px}#scopeConflict3910[hidden],.schedule3910-warning[hidden]{display:none}
+@media(max-width:1050px){.handoff3910{flex-direction:column;align-items:stretch}.handoff3910 .actions{max-width:none}.handoff3910-fin-row{grid-template-columns:1fr}}

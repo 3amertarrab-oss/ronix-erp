@@ -1,0 +1,24 @@
+/* Readable operational summaries. State is conveyed with text as well as color. */
+.scope-progress3924{border:1px solid #d9e4ef;border-radius:12px;padding:14px 16px;background:#f8fafc;margin:12px 0;min-width:0}
+.scope-progress-head3924{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.scope-progress-metrics3924{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:12px 0}
+.scope-progress-metrics3924>div:last-child{margin-inline-start:auto;text-align:center;padding:4px 12px}
+.scope-progress-metrics3924>div:last-child>b{display:block;font-size:21px}
+.scope-progress-metrics3924 small{display:block;color:#415770;font-size:13px}
+.scope-progress3924 details{border-top:1px solid #dce6ef;padding-top:10px;font-size:13px;line-height:1.8}
+.scope-progress3924 summary{cursor:pointer;font-weight:600;color:#274d70}
+.scope-line3924{display:flex;justify-content:space-between;gap:16px;padding:6px 0;border-bottom:1px solid #e2e9f1}
+.scope-line3924>b{white-space:nowrap}.scope-progress3924 .notice{margin-bottom:0}
+.finance-context3924{border-inline-start:4px solid #2d628e;font-size:15px}
+.r395-fin-metric b{font-variant-numeric:tabular-nums}.r395-fin-metric small{font-size:13px;color:#3e5670}
+.table-wrap td,.table-wrap th{font-variant-numeric:tabular-nums}.table-wrap td button{display:block;margin-top:8px;white-space:normal}
+.employee-board-person{min-height:74px}.employee-board-person small,.employee-board-state{font-size:13px!important;line-height:1.65}.employee-board-count{font-size:12px}.employee-board-project{margin-top:16px}
+.employee-board-person.selected{outline:2px solid #335f83;outline-offset:-2px}.employee-board-person.busy.selected{outline-color:#a32432}
+.employee-board-head{position:relative}.employee-board-next{font-size:14px;line-height:1.8}.employee-board-fold{font-size:14px}
+.final-blockers3923 li{align-items:start;gap:8px}.final-blockers3923 li button{margin-top:5px}
+button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #4a86b6;outline-offset:3px}
+.notice.danger{border-inline-start:3px solid #ba3242}.project-mini-copy{min-width:0;overflow-wrap:anywhere}
+@media(max-width:700px){.scope-progress3924{padding:12px}.scope-progress-metrics3924{gap:10px}.scope-progress-metrics3924 .ronix-ring-item{flex:1 1 135px}.scope-progress-metrics3924>div:last-child{margin:0}.scope-line3924{flex-wrap:wrap}.employee-board-people{max-height:240px}.r395-fin-filters{grid-template-columns:1fr}.financial-row{gap:12px}.table-wrap{max-width:100%;overflow:auto}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:0s!important;transition-duration:0s!important}}
+
+.flow-strip .flow-stage-action{flex:0 0 auto;max-width:170px;min-width:85px}.flow-strip{min-width:0;max-width:100%;overscroll-behavior-inline:contain}.assignment-summary3924{font-size:13px;color:#3e5875;margin:9px 0}.assignment-summary3924>summary{cursor:pointer;line-height:1.8}.assignment-summary3924[open]{padding:10px;border:1px solid #e1e8f0;border-radius:8px}

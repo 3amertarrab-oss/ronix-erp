@@ -1,0 +1,13 @@
+{
+  "name": "ronix-unified",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node erp/server.js",
+    "test": "node --test tests/*.test.cjs",
+    "migration:check": "node scripts/migration-check.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
