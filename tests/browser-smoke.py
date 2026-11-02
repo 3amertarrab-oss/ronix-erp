@@ -36,6 +36,11 @@ try:
         page.locator('[data-owner-dashboard33] .o34-modules').wait_for()
         assert page.locator('.o34-module').count()==5
         assert page.locator('.source-pending3921').count()==0
+        nav_to('integrationReview')
+        page.locator('.integration-review-grid article').first.wait_for()
+        assert page.locator('.integration-review-grid article').count()==3
+        assert page.locator('.integration-state.pending').count()==0
+        nav_to('dash')
         artifacts=ROOT/'artifacts';artifacts.mkdir(exist_ok=True)
         page.screenshot(path=str(artifacts/'desktop-command-center.png'),full_page=True)
         page.locator('[data-o34-search]').fill('Test Project')
