@@ -3,3 +3,5 @@ erp/data/*
 erp/thumbnail-cache.json
 node_modules/
 artifacts/
+.wrangler/
+.wrangler-build/

@@ -1125,7 +1125,7 @@ drawNav=function(){
  const summary=document.createElement('summary');summary.textContent=T('الإدارة والإعدادات والتقارير','Administration, settings & reports');box.append(summary);
  extra.forEach(n=>box.append(n));if(extra.length)nav.append(box);
  box.addEventListener('toggle',()=>moreMenuOpen3928=box.open);
- $('buildLabel').textContent='RONIX Unified 0.1 · '+T('نسخة مراجعة','Review build');
+ $('buildLabel').textContent='CRM RONIX · '+T('إدارة العملاء والمشروعات','Customer & project management');
 };
 const renderBeforeClean3928=render;
 render=function(){
