@@ -1,0 +1,41 @@
+#mobileNavToggle{display:none}
+
+@media(max-width:850px){
+ html,body{max-width:100%;overflow-x:hidden}
+ #shell .app-header{height:72px;min-height:72px;padding:10px 12px;align-items:center}
+ #shell .identity{min-width:0;flex:1}
+ #shell .identity img{width:36px;height:36px}
+ #shell .identity b{font-size:17px;white-space:nowrap}
+ #shell .identity small{display:none}
+ #shell .header-actions{max-width:none;flex-wrap:nowrap;gap:6px}
+ #shell .header-actions #sessionName,#shell #feedbackButton{display:none}
+ #mobileNavToggle{display:inline-grid;place-items:center;width:40px;height:40px;padding:0!important;font-size:22px!important}
+ #shell #sidebar,#shell html[dir=ltr] #sidebar{display:block;position:fixed;inset:72px 0 0 auto;width:min(86vw,330px);height:calc(100dvh - 72px);padding:14px 10px;background:#122438;transform:translateX(105%);transition:transform .2s ease;z-index:40;overflow-y:auto;box-shadow:-14px 0 35px #07132155}
+ html[dir=ltr] #shell #sidebar{inset:72px auto 0 0;transform:translateX(-105%)}
+ body.mobile-nav-open #shell #sidebar{transform:translateX(0)}
+ #shell #sidebar .nav-caption,#shell #sidebar .sidebar-foot{display:block}
+ #shell #navigation{display:grid;white-space:normal;overflow:visible;gap:5px}
+ #shell #navigation .nav-group>summary{display:block;color:#b8c7d8;padding:11px 12px}
+ #shell #navigation .nav-group>div{display:grid}
+ #shell #navigation button{justify-content:flex-start;min-height:42px;padding:10px 12px;font-size:13px}
+ #shell #navigation .rb398-nav-text{display:inline}
+ #shell #main{margin:0!important;padding:88px 10px 22px!important;width:100%;min-width:0}
+ #view{width:100%;min-width:0;overflow:visible}
+ .workspace-breadcrumb{font-size:11px;white-space:normal}
+ .page-head h1{font-size:24px}
+ .page-head p{font-size:12px}
+ .module-tabs{position:relative;top:auto;display:flex;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;padding:7px;scroll-snap-type:x proximity}
+ .module-tabs button{flex:0 0 auto;scroll-snap-align:start;padding:8px 12px}
+ .unified-module-frame{display:block;width:100%;max-width:100%;height:calc(100dvh - 210px);min-height:600px;border-radius:10px}
+ .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ table{min-width:620px}
+ dialog{width:calc(100vw - 18px);max-width:none}
+}
+
+@media(max-width:430px){
+ #shell .identity img{display:none}
+ #shell .identity b{font-size:16px}
+ #shell .header-actions button{padding:6px 8px}
+ #shell #main{padding-inline:8px!important}
+ .page-head h1{font-size:22px}
+}

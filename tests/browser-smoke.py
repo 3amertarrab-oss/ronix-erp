@@ -104,6 +104,15 @@ try:
         mp.locator('[data-owner-dashboard33] .o34-modules').wait_for()
         assert mp.locator('.o34-module').count()==5
         assert mp.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth')
+        mp.locator('#mobileNavToggle').click()
+        assert mp.locator('#sidebar').is_visible()
+        mp.wait_for_timeout(300)
+        sidebar_box=mp.locator('#sidebar').bounding_box()
+        assert sidebar_box and sidebar_box['x']>=0 and sidebar_box['x']+sidebar_box['width']<=391,sidebar_box
+        mp.locator('#navigation [data-route="fin"]').evaluate("e=>{e.closest('details')?.setAttribute('open','');e.click()}")
+        mp.locator('.module-tabs').wait_for()
+        assert not mp.locator('body').evaluate("e=>e.classList.contains('mobile-nav-open')")
+        assert mp.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth')
         mp.screenshot(path=str(artifacts/'mobile-command-center.png'),full_page=True)
         mp.goto(base+'/modules/commercial.html?project=PRJ-101')
         mp.wait_for_function('() => window.RonixSharedCommercial')
