@@ -16,11 +16,5 @@
       "database_id": "448a8be9-0969-4431-b72c-c1c21eaadae5"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "FILES",
-      "bucket_name": "crm-ronix-files"
-    }
-  ],
   "observability": { "enabled": true }
 }
