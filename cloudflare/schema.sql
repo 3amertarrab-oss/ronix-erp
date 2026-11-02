@@ -5,6 +5,13 @@ CREATE TABLE IF NOT EXISTS app_state (
   doc_json TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS state_snapshots (
+  revision INTEGER PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  doc_json TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   salt TEXT NOT NULL,

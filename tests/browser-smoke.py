@@ -37,6 +37,8 @@ try:
         frame.locator('#sharedProject').select_option('PRJ-101')
         # Fill the approved editor model; validation and totals run in the real browser.
         cf=next(f for f in page.frames if '/modules/commercial.html' in f.url)
+        assert cf.locator('body').evaluate("e=>e.classList.contains('ronix-embedded')")
+        assert not cf.locator('#ronix-1004 > .app-header').is_visible()
         cf.evaluate("""()=>{const d=Ronix1007.read(),s=d.state;s.lang='ar';s.reference='TEST-Q-1';s.example=false;s.client='Test Customer';s.project='Test Project';s.items.forEach(r=>r.on=false);Object.assign(s.items.find(r=>r.id==='roof'),{on:true,qty:2,rate:100,scope:'تركيب فقط'});s.discount=0;s.vat=false;s.stamp=false;Ronix1007.load(d);const translated=Ronix1007.read();for(const text of Ronix1007.translationEntries())translated.state.translations[text]={ar:text,en:text};Ronix1007.load(translated)}""")
         assert cf.evaluate('Ronix1007.totals().total')==200
         server_total=context.request.post(base+'/api/unified/migration-preview',data={'backup':cf.evaluate('Ronix1007.read()')},headers={'X-Ronix-CSRF':auth['csrf']})
@@ -59,6 +61,9 @@ try:
         page.frame_locator('#unifiedFrame').locator('#sharedStatus').wait_for()
         ff=next(f for f in page.frames if '/modules/finance.html' in f.url)
         ff.wait_for_function("() => document.querySelector('#sharedStatus')?.textContent.includes('متصل')")
+        assert ff.locator('body').evaluate("e=>e.classList.contains('ronix-embedded')")
+        side_box=ff.locator('.side').bounding_box()
+        assert side_box and side_box['height']<100 and side_box['width']>900,side_box
         assert ff.evaluate('data.projects[0].contract')==200
         # Existing save reconciles and audits; our adapter changes persistence only.
         ff.evaluate("data.projects[0].note='browser-persistence';save()")
@@ -96,7 +101,7 @@ try:
         page.screenshot(path=str(artifacts/'desktop-accounts.png'),full_page=True)
         mp.screenshot(path=str(artifacts/'mobile-accounts.png'),full_page=True)
         assert not errors,errors
-        print(json.dumps({'status':'PASS','checks':['ERP navigation','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile editor load'],'pageErrors':errors},ensure_ascii=False))
+        print(json.dumps({'status':'PASS','checks':['ERP navigation','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile editor load'],'pageErrors':errors},ensure_ascii=False))
         browser.close()
 finally:
     if proc:
