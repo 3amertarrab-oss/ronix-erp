@@ -6,7 +6,7 @@ const R20Cloud={state:{user:null}};
  const MAX_IMPORT_BYTES=8*1024*1024;
  const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const bar=document.createElement('section');bar.className='panel';bar.style.cssText='position:sticky;top:0;z-index:30;border:2px solid #b58a48';
- bar.innerHTML='<button class="btn" id="sharedMenu">☰ الأقسام</button><b>حسابات RONIX المشتركة</b> <span id="sharedStatus" role="status">جارٍ التحميل…</span><div class="actions"><button class="btn" id="sharedReload">تحديث</button><button class="btn" id="sharedExport">نسخة من بيانات هذه الشاشة</button><button class="btn" id="sharedLink">ربط مشروع البرنامج</button><button class="btn" id="sharedMigration">دمج نسخة V20 بأمان</button></div><input type="file" accept=".json,application/json" id="sharedFile" hidden><div id="sharedDetails"></div>';
+ bar.innerHTML='<button class="btn" id="sharedMenu">☰ الأقسام</button><b>حسابات RONIX</b> <small id="financeRelease" hidden></small> <span id="sharedStatus" role="status">جارٍ التحميل…</span><div class="actions"><button class="btn" id="sharedReload">تحديث</button><button class="btn" id="sharedExport">نسخة من بيانات هذه الشاشة</button><button class="btn" id="sharedLink">ربط مشروع البرنامج</button><button class="btn" id="sharedMigration">دمج نسخة V20 بأمان</button></div><input type="file" accept=".json,application/json" id="sharedFile" hidden><div id="sharedDetails"></div>';
  document.querySelector('.main').prepend(bar);
  const status=t=>bar.querySelector('#sharedStatus').textContent=t;
  async function api(path,body){const r=await fetch('/api/'+path,{credentials:'same-origin',cache:'no-store',...(body?{method:'POST',headers:{'Content-Type':'application/json','X-Ronix-CSRF':session.csrf},body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok){const e=Error(j.message||'تعذر الاتصال');e.status=r.status;throw e;}return j;}
@@ -93,6 +93,12 @@ const R20Cloud={state:{user:null}};
  window.addEventListener('beforeunload',e=>{if(pending||inflight||blocked||importing){e.preventDefault();e.returnValue='';}});
  try{
   session=await api('session');R20Cloud.state.user={id:session.user.id,email:session.user.role==='Owner'?'3amertarrab@gmail.com':''};
+  const release=session.release?.financeRelease;
+  if(release?.number&&release.completedOn){
+   const label=bar.querySelector('#financeRelease');
+   label.textContent='تحديث '+release.number+' · اكتمل '+release.completedOn+' · '+release.summary;
+   label.hidden=false;
+  }
   await refresh();document.body.classList.remove('r20-locked');
   if(window.RonixFinanceBridge)window.RonixFinanceBridge.markReady();else{const requestedPage=new URLSearchParams(location.search).get('page');if(['dashboard','projects','designers','payments','clients','claims','advanced','reports'].includes(requestedPage))go(requestedPage);}
   if(session.user.role!=='Owner')bar.querySelector('#sharedMigration').hidden=true;
