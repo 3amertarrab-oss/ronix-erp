@@ -1,0 +1,27 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
+const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
+
+test('update 005 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '005');
+  assert.match(html, /مركز حساب مسوّق/);
+  assert.match(html, /كل فواتير المسوّقين/);
+  assert.match(html, /سجل الدفعات/);
+  assert.match(html, /فتح المركز وكل الفواتير/);
+});
+
+test('marketer invoices use the protected attachment store', () => {
+  assert.match(html, /marketer-invoice:/);
+  assert.match(html, /r14ProofAction\('payment',invoiceKey/);
+  assert.match(html, /فاتورة المسوّق/);
+});
+
+test('marketers appear in dashboard, project view and printed project file', () => {
+  assert.match(html, /r41-dashboard/);
+  assert.match(html, /r41-project/);
+  assert.match(html, /عمولات ودفعات المسوّقين/);
+});

@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "004",
+  "update": "005",
   "completedOn": "2026-11-20",
-  "summary": "إعادة بناء المطالبات بخمس خطوات ومراجعة المطابقة والطباعة",
+  "summary": "مراكز المسوقين والدفعات والفواتير ومرفقاتها وكشوف الحساب",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
