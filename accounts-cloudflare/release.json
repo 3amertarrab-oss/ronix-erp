@@ -1,0 +1,8 @@
+{
+  "product": "حسابات RONIX",
+  "update": "003",
+  "completedOn": "2026-11-20",
+  "summary": "حسابات المسوقين وفواتير العمولات",
+  "dataStore": "Supabase",
+  "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
+}
