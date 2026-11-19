@@ -4,9 +4,9 @@
   "baseline": "R42.3.9.33",
   "schemaVersion": 56,
   "financeRelease": {
-    "number": "001",
-    "completedOn": "2026-11-19",
-    "summary": "إعادة بناء شاشة المطالبات"
+    "number": "002",
+    "completedOn": "2026-11-20",
+    "summary": "حسابات المسوّقين وفواتير العمولات"
   },
   "releaseStatus": "API_RENDER_LOGIC_AND_LINUX_LAUNCHER_VERIFIED_BROWSER_WINDOWS_PENDING",
   "financeModules": "Preserved R42 commercial/accounting workbench with guarded receipt, claims and independent project/financial closure",

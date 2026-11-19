@@ -229,6 +229,42 @@ try:
         assert next(p for p in persisted['projects'] if p['code']=='SAR-TEST')['photos'][0]['id']=='TEST-PHOTO'
         assert persisted['receiptAttachments']['CLAIM-RECEIPT-TEST']['name']=='Test receipt image'
         assert any(c['id']==claim_id for c in persisted['claims'])
+        # Issue a marketer invoice after collection and record one separate cash settlement.
+        ff.evaluate("""() => {
+            const next=R14.copy(data),claim=next.claims[0];
+            next.clientReceipts.push({id:'COM-RECEIPT-TEST',code:claim.code,client:claim.client,
+                date:claim.date,amount:160,method:'cash',ref:'COM-TEST'});
+            if(!r14Persist(next,'test remaining project receipt'))throw Error('Receipt fixture rejected');
+        }""")
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        base_cost=ff.evaluate("ccAmounts('PRJ-101').projectCosts")
+        ff.evaluate("openCommissionInvoice('PRJ-101')")
+        ff.locator('#commissionPayee').fill('مسوّق تجريبي')
+        ff.locator('#commissionAmount').fill('15')
+        ff.get_by_role('button',name='إصدار الفاتورة',exact=True).click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        assert ff.evaluate("ccAmounts('PRJ-101').projectCosts")==base_cost+15
+        assert ff.evaluate("R16.project(data,'PRJ-101').cashExpenses")==0
+        with page.expect_popup() as invoice_popup:
+            ff.locator('#modalBody').get_by_role('button',name='طباعة / PDF',exact=True).click()
+        invoice_page=invoice_popup.value
+        assert 'مسوّق تجريبي' in invoice_page.locator('body').inner_text()
+        invoice_page.emulate_media(media='print')
+        assert not invoice_page.get_by_role('button',name='طباعة / PDF').is_visible()
+        assert invoice_page.pdf().startswith(b'%PDF')
+        invoice_page.close()
+        ff.locator('#modalBody').get_by_role('button',name='تسجيل السداد',exact=True).click()
+        ff.get_by_role('button',name='تأكيد السداد',exact=True).click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ') && data.projectExpenses.some(r=>r.paymentStatus==='paid')")
+        assert ff.evaluate("ccAmounts('PRJ-101').projectCosts")==base_cost+15
+        assert ff.evaluate("R16.project(data,'PRJ-101').cashExpenses")==15
+        ledger=ff.evaluate("""() => {
+            const invoice=data.projectExpenses.find(R14.isCommission);
+            return R24Financial.build(data).entries.filter(e=>e.id.endsWith(invoice.id)).map(e=>e.lines);
+        }""")
+        assert len(ledger)==2
+        assert sum(line['debit'] for entry in ledger for line in entry if line['account']=='5250')==15
+        ff.locator('#modalBody').get_by_role('button',name='إغلاق',exact=True).click()
         # Cost-center detail keeps the selected project in bridge state.
         page.locator('.module-more > summary').click()
         cost_tab=page.locator('.module-more [data-finance-page="costcenters"]')
@@ -331,7 +367,7 @@ try:
         assert pp.locator('[data-action42="project.commercial"]').count()==1
         pm_context.close()
         assert not errors,errors
-        print(json.dumps({'status':'PASS','checks':['dynamic owner command center','button registry checkpoint','customer-to-project stable identity','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','finance context and route bridge','navigation error rollback','project-filtered claims and cost center','claim editor, approval, SAR / EGP print, media preservation and receipt matching','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile primary actions and More','role-based dynamic actions'],'pageErrors':errors},ensure_ascii=False))
+        print(json.dumps({'status':'PASS','checks':['dynamic owner command center','button registry checkpoint','customer-to-project stable identity','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','finance context and route bridge','navigation error rollback','project-filtered claims and cost center','claim editor, approval, SAR / EGP print, media preservation and receipt matching','marketer invoice,payment and project costs','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile primary actions and More','role-based dynamic actions'],'pageErrors':errors},ensure_ascii=False))
         browser.close()
 finally:
     if proc:

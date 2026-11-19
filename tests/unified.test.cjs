@@ -38,6 +38,25 @@ test('claim approval protects history and only the owner can review',()=>{
  payload.claims=[];
  assert.throws(()=>U.saveFinance(d,owner,{baseRevision:2,payload}),e=>e.status===409);
 });
+test('marketer invoice requires collected contract and can be paid only once',()=>{
+ const d=fixture(),payload=financePayload();
+ payload.clientReceipts.push({id:'RC-1',code:'FIN-1',client:'Finance Client',date:'2026-11-02',amount:50});
+ const invoice={id:'COM-1',ref:'COM-1',code:'FIN-1',payee:'Marketer A',date:'2026-11-02',amount:12,
+  expenseType:'marketing-commission',accountingReviewed:true,accountId:'5250',payableAccountId:'2350',
+  paymentStatus:'accrued',cashEffect:false};
+ U.saveFinance(d,acc,{baseRevision:0,payload});
+ payload.projectExpenses.push(invoice);
+ assert.throws(()=>U.saveFinance(d,acc,{baseRevision:1,payload}),e=>e.status===409);
+ payload.clientReceipts[0].amount=100;
+ U.saveFinance(d,acc,{baseRevision:1,payload});
+ Object.assign(invoice,{paymentStatus:'paid',cashEffect:true,method:'bank',paidOn:'2026-11-03'});
+ U.saveFinance(d,acc,{baseRevision:2,payload});
+ assert.equal(U.root(d).finance.payload.projectExpenses.length,1);
+ assert.equal(U.root(d).finance.payload.projectExpenses[0].paidOn,'2026-11-03');
+ assert.equal(U.root(d).finance.payload.clientReceipts.length,1);
+ invoice.paidOn='2026-11-04';
+ assert.throws(()=>U.saveFinance(d,acc,{baseRevision:3,payload}),e=>e.status===409);
+});
 test('migration preview is read only and does not infer matches by project name',()=>{const d=fixture(),before=JSON.stringify(d),payload=U.R.normalize({projects:[{code:'other',name:'Test Project',client:'Test Customer',contract:200}],assignments:[],payments:[]});const report=U.migration(payload,d);assert.equal(report.kind,'finance-v20');assert.equal(report.matches.length,0);assert.equal(report.unmatched.length,1);assert.equal(JSON.stringify(d),before);});
 test('finance import adds only new records and preserves the current valid database',()=>{
  const d=fixture(),current=financePayload(),incoming=financePayload({code:'FIN-2',client:'Finance Client B',customerId:'FC-2',name:'Finance Project B',assignmentId:'AS-2',paymentId:'PAY-2',documentId:'SEQ-2',documentNumber:2});

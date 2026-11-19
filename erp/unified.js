@@ -187,10 +187,29 @@ function validateClaimChanges(previous,payload,user) {
   check(!locked(old,previousProjects),'مطالبات المشروع المغلق للعرض فقط',409);
  }
 }
+function validateCommissionChanges(previous,payload){
+ const prior=new Map((previous?.projectExpenses||[]).map(row=>[row.id,row]));
+ const current=new Map(payload.projectExpenses.map(row=>[row.id,row]));
+ const same=(a,b)=>fingerprint(a)===fingerprint(b);
+ for(const old of prior.values())if(R.isCommission(old)){
+  const next=current.get(old.id);
+  check(next&&R.isCommission(next),'فاتورة العمولة محفوظة في سجل المصروفات',409);
+  if(same(old,next))continue;
+  const {paymentStatus,cashEffect,paidOn,method,...invoice}=next;
+  const {paymentStatus:oldStatus,cashEffect:oldCash,paidOn:oldPaid,method:oldMethod,...oldInvoice}=old;
+  check(oldStatus==='accrued'&&paymentStatus==='paid'&&same(invoice,oldInvoice),'يمكن فقط تسجيل سداد فاتورة العمولة المستحقة',409);
+  check(R.commissionCollection(payload,next.code,paidOn),'أكمل تحصيل المشروع قبل دفع العمولة',409);
+ }
+ for(const next of current.values())if(R.isCommission(next)&&!R.isCommission(prior.get(next.id))){
+  check(!prior.has(next.id)&&next.paymentStatus==='accrued','سجّل فاتورة عمولة مستقلة قبل الدفع',409);
+  check(R.commissionCollection(payload,next.code,next.date),'أكمل تحصيل المشروع قبل إصدار فاتورة العمولة',409);
+ }
+}
 function saveFinance(d,u,b) {
  allowed(u,'finance',true); const a=writable(d); revision(a.finance.revision,b.baseRevision);
  const payload=validateFinance(b.payload);
  validateClaimChanges(a.finance.payload,payload,u);
+ validateCommissionChanges(a.finance.payload,payload);
  const codes=new Set(payload.projects.map(p=>p.code));
  check(mediaReferences(payload)===0,'توجد مرفقات سحابية لم تُنزّل. استخدم تصدير JSON الكامل من نسخة الحسابات قبل الاستيراد');
  for(const l of a.links)check(codes.has(l.financeCode),'لا تحذف مشروعًا ماليًا مرتبطًا؛ استخدم الأرشفة');
@@ -297,6 +316,8 @@ function projection(d,p) {
  if(outstanding)blockers.push('مطالبات غير محصلة: '+outstanding);
  if(advance)blockers.push('قبض غير مخصص للمطالبات: '+advance);
  if(unbilled)blockers.push('قيمة لم تصدر عنها مطالبات: '+unbilled);
+ const commissionsDue=R.sum(f.projectExpenses.filter(row=>row.code===l.financeCode&&R.isCommission(row)&&row.paymentStatus==='accrued'));
+ if(commissionsDue)blockers.push('عمولات مسوّقين غير مسددة: '+commissionsDue);
  if(vendorOutstanding)blockers.push('مستحقات مصممين غير مسددة: '+vendorOutstanding);
  if(!fp.unifiedSourceId||!a.commercial.documents.some(x=>x.id===fp.unifiedSourceId&&x.status==='approved'))blockers.push('طابق مرجع العقد المعتمد مع الحسابات قبل الإقفال');
  const source=a.commercial.documents.find(x=>x.id===fp.unifiedSourceId);

@@ -253,6 +253,15 @@ const R14 = (() => {
   const cashReceipt=r=>r.cashAmount??r.amount;
   const fxDifference=(d,code,client)=>sum(d.clientReceipts.filter(r=>!r.sourceAdvanceId&&(!code||r.code===code)&&(!client||receiptClient(d,r)===client)),r=>delta(cashReceipt(r),r.amount));
   const receivedOriginal=(d,p)=>sum(d.clientReceipts.filter(r=>r.code===p.code),r=>r.projectAmount??unfx(r.amount,projectRate(p)));
+  const isCommission=x=>x?.expenseType==='marketing-commission';
+  const marketerName=value=>normName(value).replace(/\s+/g,' ').normalize('NFC');
+  function commissionCollection(d,code,date){
+    const project=d.projects.find(p=>p.code===code);
+    if(!project)return false;
+    const total=projectOriginalTotal(project);
+    return cents(total)>0&&cents(receivedOriginal({...d,clientReceipts:d.clientReceipts.filter(r=>r.date<=date)},project))>=cents(total);
+  }
+
   function foreignReceiptEdit(d,{batchId,client,date,total,currency='EGP',exchangeRate=1,allocations,method,ref,note,id}){
     amount(total);rate(exchangeRate);if(!/^[A-Z]{3}$/.test(currency)||(currency==='EGP'&&Number(exchangeRate)!==1))throw Error('راجع عملة القبض وسعر الصرف');
     if(!dateOK(date)||total<=0)throw Error('راجع مبلغ السند وتاريخه');
@@ -391,7 +400,17 @@ const R14 = (() => {
     }
     unique(d.openingBalances,x=>x.client,'الرصيد الافتتاحي');
     for(const o of d.openingBalances){monetary(o.amount,'رصيد افتتاحي',-1e13);dated(o.date,'رصيد افتتاحي')}
-    for(const x of d.projectExpenses){linked(x.code,'مصروف');monetary(x.amount,'مصروف',1);dated(x.date,'مصروف')}
+    for(const x of d.projectExpenses){
+      linked(x.code,'مصروف');monetary(x.amount,'مصروف',1);dated(x.date,'مصروف');
+      if(!isCommission(x))continue;
+      if(!marketerName(x.payee)||marketerName(x.payee)!==x.payee)add('اسم المسوّق غير صالح');
+      if(typeof x.id!=='string'||!x.id.startsWith('COM-')||x.ref!==x.id)add('رقم فاتورة العمولة غير صالح');
+      if(x.accountingReviewed!==true||x.accountId!=='5250'||x.payableAccountId!=='2350')add('حسابات قيد العمولة غير صالحة');
+      if(x.paymentStatus==='paid'){
+        dated(x.paidOn,'دفع عمولة');
+        if(x.cashEffect!==true||x.paidOn<x.date||!['cash','bank'].includes(x.method))add('بيانات دفع العمولة غير صالحة');
+      }else if(x.paymentStatus!=='accrued'||x.cashEffect!==false||x.paidOn||x.method)add('حالة فاتورة العمولة غير صالحة');
+    }
     for(const s of d.claimSettlements){
       if(s.mode!=null&&!['auto','manual'].includes(s.mode))add('طريقة التسوية غير صالحة');
       const c=d.claims.find(c=>c.id===s.claimId),r=d.clientReceipts.find(r=>r.id===s.receiptId);
@@ -454,7 +473,7 @@ const R14 = (() => {
     const next=copy(d);next.clientReceipts=next.clientReceipts.filter(r=>(r.batchId||r.id)!==batchId).concat(entries);
     validate(next);return next;
   }
-  return {rate,fx,unfx,projectCurrency,projectRate,projectSettlementRate,projectRateSummary,projectWeightedRate,originalContract,projectSubtotal,projectTaxAmount,projectTaxTotal,projectOriginalTotal,projectBookTotal,assignmentTotal,cashReceipt,fxDifference,receivedOriginal,foreignReceiptEdit,arrays,copy,cents,amount,sum,delta,status,active,claimRows,claimAmount,claimClient,receiptClient,totals,settled,usedReceipt,remaining,normalize,dateOK,audit,validate,receiptEdit,normName};
+  return {rate,fx,unfx,projectCurrency,projectRate,projectSettlementRate,projectRateSummary,projectWeightedRate,originalContract,projectSubtotal,projectTaxAmount,projectTaxTotal,projectOriginalTotal,projectBookTotal,assignmentTotal,cashReceipt,fxDifference,receivedOriginal,isCommission,marketerName,commissionCollection,foreignReceiptEdit,arrays,copy,cents,amount,sum,delta,status,active,claimRows,claimAmount,claimClient,receiptClient,totals,settled,usedReceipt,remaining,normalize,dateOK,audit,validate,receiptEdit,normName};
 })();
 if(typeof module!=='undefined')module.exports=R14;
 
@@ -857,6 +876,7 @@ const R24Financial = ((R) => {
     {id:'2200',code:'2200',name:'مستحقات المصممين',type:'liability',group:'designer-payable'},
     {id:'2250',code:'2250',name:'أجور مستحقة',type:'liability',group:'wages-payable'},
     {id:'2300',code:'2300',name:'الموردون',type:'liability',group:'supplier-payable'},
+    {id:'2350',code:'2350',name:'مستحقات المسوّقين',type:'liability',group:'supplier-payable'},
     {id:'2400',code:'2400',name:'ضرائب مستحقة',type:'liability',group:'tax-payable'},
     {id:'2500',code:'2500',name:'قروض والتزامات تمويلية',type:'liability',group:'loan'},
     {id:'3100',code:'3100',name:'رأس المال',type:'equity',group:'capital'},
@@ -865,6 +885,7 @@ const R24Financial = ((R) => {
     {id:'4200',code:'4200',name:'أرباح فروق العملة',type:'revenue',group:'fx-gain'},
     {id:'5100',code:'5100',name:'تكلفة المصممين',type:'expense',group:'project-cost'},
     {id:'5200',code:'5200',name:'مصروفات المشاريع',type:'expense',group:'project-cost'},
+    {id:'5250',code:'5250',name:'عمولات التسويق للمشاريع',type:'expense',group:'project-cost'},
     {id:'5300',code:'5300',name:'تكلفة ساعات العمل',type:'expense',group:'project-cost'},
     {id:'6100',code:'6100',name:'مصروفات إدارية وعمومية',type:'expense',group:'operating-expense'},
     {id:'7100',code:'7100',name:'خسائر فروق العملة',type:'expense',group:'fx-loss'}
@@ -1050,10 +1071,14 @@ const R24Financial = ((R) => {
       const amount=money(x.amount);if(amount<=0)continue;
       const account=String(x.accountId||ACCOUNT.projectExpense),dims={code:x.code||'',payee:x.payee||''};
       if(!map.has(account)){issues.push(issue('expense-account','حساب مصروف غير معروف','error',x.id));continue}
-      const paid=x.cashEffect!==false&&x.paymentStatus!=='unpaid'&&x.paymentStatus!=='accrued',credit=paid?cashAccount(x,settings,map):String(x.payableAccountId||ACCOUNT.supplierPayable);
+      const commission=R.isCommission(x),paid=x.cashEffect!==false&&x.paymentStatus!=='unpaid'&&x.paymentStatus!=='accrued';
+      const payable=String(x.payableAccountId||ACCOUNT.supplierPayable),credit=paid&&!commission?cashAccount(x,settings,map):payable;
       out.push(entry('EXPENSE:'+x.id,x.date,'مصروف مشروع '+(x.category||''),{kind:'project-expense',id:x.id},[
         line(account,amount,0,dims),line(credit,0,amount,dims)
-      ],{cashFlowCategory:paid?'operating':''}));
+      ],{cashFlowCategory:paid&&!commission?'operating':''}));
+      if(commission&&paid)out.push(entry('COMMISSION-PAYMENT:'+x.id,x.paidOn,'سداد عمولة '+x.payee,{kind:'commission-payment',id:x.id},[
+        line(payable,amount,0,dims),line(cashAccount(x,settings,map),0,amount,dims)
+      ],{cashFlowCategory:'operating'}));
     }
     for(const x of data.generalExpenses||[]){
       if(!dateOK(x.date)){issues.push(issue('general-expense-date','مصروف عام بلا تاريخ صالح','error',x.id));continue}
@@ -2689,7 +2714,7 @@ const R24Cashflow = ((R) => {
     for (const p of rows(d.payments)) push('designer', p.date, p.amount, 'designer-payment', p.code || '');
     // Internal time allocation affects project cost and margin, but it is not a
     // bank/cash movement. A later payroll/payment record is the cash event.
-    for (const x of rows(d.projectExpenses)) if (x.cashEffect !== false) push('expense', x.date, x.amount, 'project-expense', x.code || '');
+    for (const x of rows(d.projectExpenses)) if (x.cashEffect !== false) push('expense', R.isCommission(x)?x.paidOn:x.date, x.amount, 'project-expense', x.code || '');
     return out.sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind));
   }
 
@@ -3392,6 +3417,127 @@ function r24PrintFinancial(){const w=open('','_blank');if(!w)return alert('اس�
 titles.financialStatements=['القوائم المالية والإقفال','ميزان مراجعة، دخل، مركز مالي، تدفقات نقدية وإقفال موثق'];
 const r24FinancialRender=render;render=function(){if(page==='financialStatements'&&!projectFocus&&!designerFocus){$('content').innerHTML=r24FinancialPage();return}return r24FinancialRender()};
 if(!document.querySelector('.nav[data-page="financialStatements"]')){const button=document.createElement('button');button.className='nav';button.dataset.page='financialStatements';button.innerHTML='<span>▥</span>القوائم المالية والإقفال';button.onclick=()=>go('financialStatements');(document.querySelector('.nav[data-page="reports"]')||document.querySelector('.sidebar-footer')).before(button)}
+
+function commissionRows(code=''){
+ return data.projectExpenses.filter(row=>R14.isCommission(row)&&(!code||row.code===code));
+}
+function commissionButton(code=''){
+ return `<button class="btn" onclick="openCommissions('${r14Encode(code)}')">حسابات المسوّقين</button>`;
+}
+function openCommissions(encodedCode='',encodedPayee=''){
+ const code=decodeURIComponent(encodedCode),payee=decodeURIComponent(encodedPayee);
+ const names=[...new Set(commissionRows().map(row=>row.payee))].sort((a,b)=>a.localeCompare(b,'ar'));
+ const rows=commissionRows(code).filter(row=>!payee||row.payee===payee).slice().sort((a,b)=>b.date.localeCompare(a.date));
+ const total=R14.sum(rows),paid=R14.sum(rows.filter(row=>row.paymentStatus==='paid'));
+ modal('حسابات المسوّقين',`
+ <div class="formgrid"><label>حساب المسوّق<select class="field" onchange="openCommissions('${encodedCode}',r14Encode(this.value))">
+ <option value="">كل المسوّقين</option>${names.map(name=>`<option value="${esc(name)}" ${name===payee?'selected':''}>${esc(name)}</option>`).join('')}</select></label></div>
+ <p>العمولات ${money(total)} · المدفوع ${money(paid)} · المستحق ${money(R14.delta(total,paid))}</p>
+ <div class="tablewrap"><table><thead><tr><th>الفاتورة</th><th>المسوّق</th><th>المشروع</th><th>التاريخ</th><th>العمولة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+ <tbody>${rows.map(row=>{
+  const id=r14Encode(row.id);
+  return `<tr><td>${esc(row.ref)}</td><td>${esc(row.payee)}</td><td>${esc(row.code)}</td><td>${esc(row.date)}</td><td>${money(row.amount)}</td><td>${row.paidOn?'مدفوعة · '+esc(row.paidOn):'مستحقة'}</td>
+  <td><button class="btn" onclick="printCommission('${id}')">طباعة / PDF</button>${row.paidOn?'':` <button class="btn" onclick="openCommissionPayment('${id}')">تسجيل السداد</button>`}</td></tr>`;
+ }).join('')||'<tr><td colspan="7">لا توجد فواتير عمولة.</td></tr>'}</tbody></table></div>
+ <div class="modalfoot claim-footer"><button class="btn primary" onclick="openCommissionInvoice('${encodedCode}','${encodedPayee}')">+ فاتورة عمولة</button><button class="btn" onclick="closeModal()">إغلاق</button></div>`);
+}
+function commissionError(message){
+ const error=$('commissionError');
+ error.textContent=message;
+ error.hidden=false;
+}
+function openCommissionInvoice(encodedCode='',encodedPayee=''){
+ const code=decodeURIComponent(encodedCode),payee=decodeURIComponent(encodedPayee);
+ const names=[...new Set(commissionRows().map(row=>row.payee))];
+ modal('إصدار فاتورة عمولة مسوّق',`<form onsubmit="saveCommissionInvoice(event)">
+ <p class="hint">تُصدر فاتورة العمولة بعد تحصيل كامل قيمة العقد المعدلة. تدخل الفاتورة في تكلفة المشروع عند إصدارها، ويُسجل الدفع بشكل مستقل.</p>
+ <div class="formgrid"><label>المشروع<select class="field" id="commissionProject" required><option value="">اختر المشروع</option>
+ ${data.projects.filter(project=>!project.archivedAt).map(project=>`<option value="${esc(project.code)}" ${project.code===code?'selected':''}>${esc(project.code)} — ${esc(project.name)}</option>`).join('')}</select></label>
+ <label>اسم المسوّق<input class="field" id="commissionPayee" list="commissionNames" value="${esc(payee)}" required><datalist id="commissionNames">${names.map(name=>`<option value="${esc(name)}"></option>`).join('')}</datalist></label>
+ ${field('commissionDate','تاريخ الفاتورة',r14Today(),'date','required')}
+ ${field('commissionAmount','قيمة العمولة بالجنيه المصري','','number','min="0.01" step="0.01" required')}
+ ${field('commissionDescription','البيان','عمولة تسويق المشروع','text','required')}
+ </div><p id="commissionError" role="alert" hidden></p><div class="modalfoot claim-footer"><button class="btn primary">إصدار الفاتورة</button><button class="btn" type="button" onclick="openCommissions('${encodedCode}','${encodedPayee}')">رجوع</button></div></form>`);
+}
+function saveCommissionInvoice(event){
+ event.preventDefault();
+ try{
+  const code=val('commissionProject'),payee=R14.marketerName(val('commissionPayee')),date=r14RequireDate('commissionDate');
+  const project=getP(code),notes=val('commissionDescription'),amount=r14InputMoney('commissionAmount',{positive:true});
+  if(!project||project.archivedAt||!payee||!notes)throw Error('اختر المشروع وأدخل اسم المسوّق والبيان');
+  if(date>r14Today())throw Error('تاريخ الفاتورة لا يمكن أن يكون في المستقبل');
+  if(!R14.commissionCollection(data,code,date))throw Error('المشروع '+code+' لم يُحصّل كامل عقده حتى تاريخ الفاتورة');
+  const id=r14Id('COM'),record={id,ref:id,code,payee,date,amount,notes,category:'عمولة تسويق',expenseType:'marketing-commission',
+   accountingReviewed:true,accountId:'5250',payableAccountId:'2350',paymentStatus:'accrued',cashEffect:false};
+  const next=R14.copy(data);
+  next.projectExpenses.push(record);
+  if(r14Persist(next,'إصدار فاتورة عمولة',{invoiceId:id,code,payee,amount},commissionError)){
+   render();
+   openCommissions(r14Encode(code),r14Encode(payee));
+  }
+ }catch(error){commissionError(error.message);}
+}
+function openCommissionPayment(enc){
+ const row=commissionRows().find(record=>record.id===decodeURIComponent(enc));
+ if(!row||row.paymentStatus==='paid')return;
+ modal('سداد فاتورة عمولة',`<form onsubmit="saveCommissionPayment(event,'${enc}')">
+ <p>${esc(row.ref)} · ${esc(row.payee)} · ${money(row.amount)}</p>
+ <div class="formgrid">${field('commissionPaidOn','تاريخ الدفع',r14Today(),'date','required')}
+ <label>طريقة الدفع<select class="field" id="commissionMethod"><option value="cash">نقدًا</option><option value="bank">تحويل بنكي</option></select></label></div>
+ <p id="commissionError" role="alert" hidden></p><div class="modalfoot claim-footer"><button class="btn primary">تأكيد السداد</button><button type="button" class="btn" onclick="openCommissions()">رجوع</button></div></form>`);
+}
+async function saveCommissionPayment(event,enc){
+ event.preventDefault();
+ const form=event.currentTarget,button=event.submitter;
+ if(button)button.disabled=true;
+ try{
+  await window.RonixSharedFinance?.flush();
+  if(!form.isConnected)return;
+  if(window.RonixSharedFinance?.dirty())throw Error('انتظر حفظ الفاتورة على الخادم، ثم أعد محاولة السداد');
+  const next=R14.copy(data),row=next.projectExpenses.find(record=>R14.isCommission(record)&&record.id===decodeURIComponent(enc));
+  if(!row||row.paymentStatus!=='accrued')throw Error('الفاتورة غير متاحة للسداد');
+  const paidOn=r14RequireDate('commissionPaidOn');
+  if(paidOn<row.date||paidOn>r14Today())throw Error('تاريخ الدفع يجب أن يقع بين تاريخ الفاتورة واليوم');
+  if(!R14.commissionCollection(next,row.code,paidOn))throw Error('أكمل تحصيل المشروع قبل دفع العمولة');
+  Object.assign(row,{paidOn,method:val('commissionMethod'),paymentStatus:'paid',cashEffect:true});
+  if(r14Persist(next,'سداد فاتورة عمولة',{invoiceId:row.id,code:row.code,amount:row.amount,paidOn},commissionError)){
+   render();
+   openCommissions(r14Encode(row.code),r14Encode(row.payee));
+  }
+ }catch(error){commissionError(error.message);}
+ finally{if(button)button.disabled=false;}
+}
+function printCommission(enc){
+ const row=commissionRows().find(record=>record.id===decodeURIComponent(enc));
+ if(!row)return;
+ const doc=window.open('','_blank');
+ if(!doc)return;
+ const values=[['رقم الفاتورة',row.ref],['تاريخ الإصدار',row.date],['المسوّق',row.payee],
+  ['المشروع',row.code+' — '+(getP(row.code)?.name||'')],['البيان',row.notes],
+  ['العمولة بالجنيه المصري',fmt(row.amount)],['الحالة',row.paidOn?'مدفوعة في '+row.paidOn:'مستحقة']];
+ doc.document.write(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>${esc(row.ref)}</title>
+ <style>body{font:16px/1.6 Tahoma,Arial,sans-serif;margin:12mm;color:#172337}h1{border-bottom:2px solid #b58a48}
+ table{width:100%;border-collapse:collapse}th,td{padding:10px;border:1px solid #ddd;text-align:right}th{width:35%}button{margin-top:1rem}@media print{button{display:none}}</style>
+ <h1>RONIX — فاتورة عمولة تسويق</h1><table>${values.map(([key,value])=>`<tr><th>${esc(key)}</th><td>${esc(value)}</td></tr>`).join('')}</table>
+ <p>${esc(claimAmountWords(row.amount,'EGP'))}</p><button onclick="window.print()">طباعة / PDF</button></html>`);
+ doc.document.close();
+}
+
+const openOrdinaryExpense=editProjectExpense;
+editProjectExpense=function(enc){
+ const row=commissionRows().find(record=>record.id===decodeURIComponent(enc));
+ if(row)return openCommissions(r14Encode(row.code),r14Encode(row.payee));
+ return openOrdinaryExpense(enc);
+};
+const showCostCenterWithWork=showCostCenter;
+showCostCenter=function(enc){
+ showCostCenterWithWork(enc);
+ $('ccDetail')?.querySelector('.cc-head .actions')?.insertAdjacentHTML('afterbegin',commissionButton(decodeURIComponent(enc)));
+};
+const costCentersWithoutCommissions=costcenters;
+costcenters=function(){
+ return '<div class="panel">'+commissionButton()+'</div>'+costCentersWithoutCommissions();
+};
 
 // R42 finance bridge: keep the outer workspace and the embedded engine on the
 // same page and record context without giving cross-origin windows control.

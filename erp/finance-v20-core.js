@@ -84,6 +84,15 @@ const R14 = (() => {
   const cashReceipt=r=>r.cashAmount??r.amount;
   const fxDifference=(d,code,client)=>sum(d.clientReceipts.filter(r=>!r.sourceAdvanceId&&(!code||r.code===code)&&(!client||receiptClient(d,r)===client)),r=>delta(cashReceipt(r),r.amount));
   const receivedOriginal=(d,p)=>sum(d.clientReceipts.filter(r=>r.code===p.code),r=>r.projectAmount??unfx(r.amount,projectRate(p)));
+  const isCommission=x=>x?.expenseType==='marketing-commission';
+  const marketerName=value=>normName(value).replace(/\s+/g,' ').normalize('NFC');
+  function commissionCollection(d,code,date){
+    const project=d.projects.find(p=>p.code===code);
+    if(!project)return false;
+    const total=projectOriginalTotal(project);
+    return cents(total)>0&&cents(receivedOriginal({...d,clientReceipts:d.clientReceipts.filter(r=>r.date<=date)},project))>=cents(total);
+  }
+
   function foreignReceiptEdit(d,{batchId,client,date,total,currency='EGP',exchangeRate=1,allocations,method,ref,note,id}){
     amount(total);rate(exchangeRate);if(!/^[A-Z]{3}$/.test(currency)||(currency==='EGP'&&Number(exchangeRate)!==1))throw Error('راجع عملة القبض وسعر الصرف');
     if(!dateOK(date)||total<=0)throw Error('راجع مبلغ السند وتاريخه');
@@ -222,7 +231,17 @@ const R14 = (() => {
     }
     unique(d.openingBalances,x=>x.client,'الرصيد الافتتاحي');
     for(const o of d.openingBalances){monetary(o.amount,'رصيد افتتاحي',-1e13);dated(o.date,'رصيد افتتاحي')}
-    for(const x of d.projectExpenses){linked(x.code,'مصروف');monetary(x.amount,'مصروف',1);dated(x.date,'مصروف')}
+    for(const x of d.projectExpenses){
+      linked(x.code,'مصروف');monetary(x.amount,'مصروف',1);dated(x.date,'مصروف');
+      if(!isCommission(x))continue;
+      if(!marketerName(x.payee)||marketerName(x.payee)!==x.payee)add('اسم المسوّق غير صالح');
+      if(typeof x.id!=='string'||!x.id.startsWith('COM-')||x.ref!==x.id)add('رقم فاتورة العمولة غير صالح');
+      if(x.accountingReviewed!==true||x.accountId!=='5250'||x.payableAccountId!=='2350')add('حسابات قيد العمولة غير صالحة');
+      if(x.paymentStatus==='paid'){
+        dated(x.paidOn,'دفع عمولة');
+        if(x.cashEffect!==true||x.paidOn<x.date||!['cash','bank'].includes(x.method))add('بيانات دفع العمولة غير صالحة');
+      }else if(x.paymentStatus!=='accrued'||x.cashEffect!==false||x.paidOn||x.method)add('حالة فاتورة العمولة غير صالحة');
+    }
     for(const s of d.claimSettlements){
       if(s.mode!=null&&!['auto','manual'].includes(s.mode))add('طريقة التسوية غير صالحة');
       const c=d.claims.find(c=>c.id===s.claimId),r=d.clientReceipts.find(r=>r.id===s.receiptId);
@@ -285,6 +304,6 @@ const R14 = (() => {
     const next=copy(d);next.clientReceipts=next.clientReceipts.filter(r=>(r.batchId||r.id)!==batchId).concat(entries);
     validate(next);return next;
   }
-  return {rate,fx,unfx,projectCurrency,projectRate,projectSettlementRate,projectRateSummary,projectWeightedRate,originalContract,projectSubtotal,projectTaxAmount,projectTaxTotal,projectOriginalTotal,projectBookTotal,assignmentTotal,cashReceipt,fxDifference,receivedOriginal,foreignReceiptEdit,arrays,copy,cents,amount,sum,delta,status,active,claimRows,claimAmount,claimClient,receiptClient,totals,settled,usedReceipt,remaining,normalize,dateOK,audit,validate,receiptEdit,normName};
+  return {rate,fx,unfx,projectCurrency,projectRate,projectSettlementRate,projectRateSummary,projectWeightedRate,originalContract,projectSubtotal,projectTaxAmount,projectTaxTotal,projectOriginalTotal,projectBookTotal,assignmentTotal,cashReceipt,fxDifference,receivedOriginal,isCommission,marketerName,commissionCollection,foreignReceiptEdit,arrays,copy,cents,amount,sum,delta,status,active,claimRows,claimAmount,claimClient,receiptClient,totals,settled,usedReceipt,remaining,normalize,dateOK,audit,validate,receiptEdit,normName};
 })();
 if(typeof module!=='undefined')module.exports=R14;
