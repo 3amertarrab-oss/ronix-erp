@@ -23,6 +23,21 @@ test('documents require existing project/customer and stable identities',()=>{co
 test('optimistic document concurrency and immutable approval',()=>{const d=fixture(),r=saved(d);assert.throws(()=>saved(d),e=>e.status===409);const a=U.approve(d,owner,{baseRevision:1,id:r.document.id});assert.equal(a.document.status,'approved');assert.equal(D.W.total(d.commercial.quotes[0],'quote'),200);assert.throws(()=>U.saveDocument(d,owner,{baseRevision:2,id:r.document.id,projectId:'PRJ-101',customerId:'C1',draft:draft()}),e=>e.status===409);assert.throws(()=>U.approve(d,acc,{baseRevision:2,id:r.document.id}),e=>e.status===403);});
 test('handoff to approved accounting is idempotent and preserves currency',()=>{const d=fixture(),r=saved(d,'contract','USD');U.approve(d,owner,{baseRevision:1,id:r.document.id});assert.throws(()=>U.handoff(d,acc,{baseRevision:2,financeRevision:0,id:r.document.id,rate:0}));const b={baseRevision:2,financeRevision:0,id:r.document.id,rate:50};const a=U.handoff(d,acc,b),again=U.handoff(d,acc,b);assert.equal(again.replayed,true);assert.equal(U.root(d).finance.payload.projects.length,1);const p=U.root(d).finance.payload.projects[0];assert.equal(p.contractCurrency,'USD');assert.equal(p.originalContract,200);assert.equal(p.contract,10000);assert.equal(a.financeCode,'PRJ-101');assert.equal(U.projection(d,d.data[0]).value,10000);});
 test('finance conflicts cannot overwrite newer changes and malformed records fail',()=>{const d=fixture(),payload=U.R.normalize({projects:[],assignments:[],payments:[]});U.saveFinance(d,acc,{baseRevision:0,payload});assert.throws(()=>U.saveFinance(d,acc,{baseRevision:0,payload}),e=>e.status===409);assert.throws(()=>U.saveFinance(d,engineer,{baseRevision:1,payload}),e=>e.status===403);assert.throws(()=>U.saveFinance(d,acc,{baseRevision:1,payload:{projects:'wrong'}}));});
+test('claim approval protects history and only the owner can review',()=>{
+ const d=fixture(),payload=financePayload();
+ const c={id:'CL-1',code:'FIN-1',client:'Finance Client',date:'2026-11-02',status:'بانتظار المدير',total:50,items:[{desc:'Design',amount:50}]};
+ payload.claims.push(c);
+ U.saveFinance(d,acc,{baseRevision:0,payload});
+ c.status='معتمدة';
+ assert.throws(()=>U.saveFinance(d,acc,{baseRevision:1,payload}),e=>e.status===403);
+ c.items[0].desc='Replaced';
+ assert.throws(()=>U.saveFinance(d,owner,{baseRevision:1,payload}),e=>e.status===409);
+ c.items[0].desc='Design';
+ U.saveFinance(d,owner,{baseRevision:1,payload});
+ assert.equal(U.root(d).finance.payload.claims[0].id,'CL-1');
+ payload.claims=[];
+ assert.throws(()=>U.saveFinance(d,owner,{baseRevision:2,payload}),e=>e.status===409);
+});
 test('migration preview is read only and does not infer matches by project name',()=>{const d=fixture(),before=JSON.stringify(d),payload=U.R.normalize({projects:[{code:'other',name:'Test Project',client:'Test Customer',contract:200}],assignments:[],payments:[]});const report=U.migration(payload,d);assert.equal(report.kind,'finance-v20');assert.equal(report.matches.length,0);assert.equal(report.unmatched.length,1);assert.equal(JSON.stringify(d),before);});
 test('finance import adds only new records and preserves the current valid database',()=>{
  const d=fixture(),current=financePayload(),incoming=financePayload({code:'FIN-2',client:'Finance Client B',customerId:'FC-2',name:'Finance Project B',assignmentId:'AS-2',paymentId:'PAY-2',documentId:'SEQ-2',documentNumber:2});

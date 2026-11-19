@@ -137,6 +137,98 @@ try:
         params=parse_qs(urlparse(page.url).query)
         assert params.get('view')==['collections'] and params.get('financePage')==['claims']
         assert page.locator('#navigation [data-route="collections"]').evaluate("e=>e.classList.contains('active')")
+        # Claims use current contract data and issue or review without changing projects or receipts.
+        before_claim=ff.evaluate("({projects:JSON.stringify(data.projects),receipts:JSON.stringify(data.clientReceipts)})")
+        ff.locator('#content').get_by_role('button',name='+ مطالبة للمشروع',exact=True).click()
+        editor=ff.locator('#claimEditor')
+        editor.locator('[data-claim-step="1"]').click()
+        assert '200' in editor.locator('.claim-project-values').inner_text()
+        editor.locator('[data-claim-step="3"]').click()
+        assert not editor.locator('[data-rate-value]').count()
+        assert not editor.locator('#claimDisplayCurrency').is_visible()
+        editor.locator('[data-claim-step="2"]').click()
+        description=editor.get_by_label('بيان بند المطالبة').first
+        original_description=description.input_value()
+        description.fill('')
+        editor.get_by_role('button',name='إصدار',exact=True).click()
+        assert 'الوصف' in editor.locator('#claimError').inner_text()
+        assert description.evaluate('el => document.activeElement===el')
+        description.fill(original_description)
+        editor.get_by_role('button',name='حفظ مسودة',exact=True).click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        claim_id=ff.evaluate('data.claims[0].id')
+        claim_row=ff.locator('.r14-claims-table tbody tr').first
+        assert 'مسودة' in claim_row.inner_text()
+        claim_row.get_by_role('button',name='تعديل').click()
+        editor.get_by_role('button',name='إرسال للمدير').click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        claim_row.get_by_role('button',name='عرض',exact=True).click()
+        ff.locator('#modalBody').get_by_role('button',name='اعتماد',exact=True).click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        assert ff.evaluate('data.claims[0].id')==claim_id
+        assert 'معتمدة' in claim_row.inner_text()
+        document=ff.evaluate('r14ClaimDocument(data.claims[0])')
+        assert 'جنيه مصري فقط' in document and 'النقد الفعلي' not in document
+        claim_row.get_by_role('button',name='مطابقة تحصيل').click()
+        assert 'المتبقي' in ff.locator('#claimMatchPreview').inner_text()
+        assert ff.locator('#claimMatchConfirm').is_disabled()
+        ff.locator('#claimMatchForm').get_by_role('button',name='إغلاق').click()
+        assert before_claim==ff.evaluate("({projects:JSON.stringify(data.projects),receipts:JSON.stringify(data.clientReceipts)})")
+        # Use an existing synthetic receipt; matching changes only its claim allocation.
+        ff.evaluate("""() => {
+            const next=R14.copy(data),claim=next.claims[0];
+            next.clientReceipts.push({id:'CLAIM-RECEIPT-TEST',code:claim.code,client:claim.client,
+                date:claim.date,amount:40,method:'cash',ref:'CLAIM-TEST'});
+            if(!r14Persist(next,'test receipt'))throw Error('Receipt fixture rejected');
+            render();
+        }""")
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        receipts_before_match=ff.evaluate('JSON.stringify(data.clientReceipts)')
+        claim_row.get_by_role('button',name='مطابقة تحصيل').click()
+        ff.locator('.claim-match-input').fill('25')
+        assert '25' in ff.locator('#claimMatchPreview').inner_text()
+        assert '175' in ff.locator('#claimMatchPreview').inner_text()
+        ff.locator('#claimMatchConfirm').click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        assert ff.evaluate('JSON.stringify(data.clientReceipts)')==receipts_before_match
+        assert ff.evaluate('data.claimSettlements[0].amount')==25
+        assert claim_row.get_by_role('button',name='مطابقة دفعة أخرى').is_visible()
+        # A SAR claim uses its saved issue rate and leaves media and the first claim intact.
+        ff.evaluate("""() => {
+            const next=R14.copy(data),client=next.projects[0].client;
+            const image='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+            next.projects.push({code:'SAR-TEST',client,name:'SAR Project',kind:'تنفيذ',state:'نشط',
+                contract:124.57,originalContract:10,contractCurrency:'SAR',contractRate:12.457,
+                photos:[{id:'TEST-PHOTO',src:image}]});
+            next.receiptAttachments['CLAIM-RECEIPT-TEST']={data:image,name:'Test receipt image'};
+            if(!r14Persist(next,'test project and media'))throw Error('Media fixture rejected');
+            render();
+        }""")
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        ff.evaluate("openClaim('SAR-TEST')")
+        editor.locator('[data-claim-step="2"]').click()
+        editor.get_by_label('كمية المطالبة').fill('3')
+        editor.get_by_label('سعر وحدة المطالبة').fill('0.01')
+        editor.locator('[data-claim-step="3"]').click()
+        editor.locator('[data-rate-source]').select_option('manual')
+        editor.locator('[data-rate-value]').fill('13.25')
+        editor.locator('#claimDisplayCurrency').select_option('both')
+        editor.get_by_role('button',name='إصدار',exact=True).click()
+        ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
+        sar=ff.evaluate("data.claims.find(claim=>claim.code==='SAR-TEST')")
+        assert sar['projectRows'][0]['claimRate']==13.25 and sar['total']==0.37 and sar['accountingTotal']==0.4
+        sar_document=ff.evaluate("r14ClaimDocument(data.claims.find(claim=>claim.code==='SAR-TEST'))")
+        assert all(token in sar_document for token in ['SAR','ج.م','13.25','ريال سعودي','جنيه مصري'])
+        print_preview=context.new_page()
+        print_preview.set_content(sar_document)
+        print_preview.emulate_media(media='print')
+        assert not print_preview.locator('nav.claim-actions').is_visible()
+        assert print_preview.pdf().startswith(b'%PDF')
+        print_preview.close()
+        persisted=context.request.get(base+'/api/unified/finance').json()['payload']
+        assert next(p for p in persisted['projects'] if p['code']=='SAR-TEST')['photos'][0]['id']=='TEST-PHOTO'
+        assert persisted['receiptAttachments']['CLAIM-RECEIPT-TEST']['name']=='Test receipt image'
+        assert any(c['id']==claim_id for c in persisted['claims'])
         # Cost-center detail keeps the selected project in bridge state.
         page.locator('.module-more > summary').click()
         cost_tab=page.locator('.module-more [data-finance-page="costcenters"]')
@@ -159,7 +251,7 @@ try:
         projects_tab=page.locator('.module-tabs [data-finance-page="projects"]');page.evaluate('window.__ronixFinanceStates=[]');projects_tab.click()
         page.wait_for_function("() => window.__ronixFinanceStates.some(s=>s.page==='projects'&&s.project==='PRJ-101')")
         ff=next(f for f in page.frames if '/modules/finance.html' in f.url)
-        ff.wait_for_function("() => document.querySelector('#sharedStatus')?.textContent.includes('متصل')")
+        ff.wait_for_function("() => /متصل|تم الحفظ/.test(document.querySelector('#sharedStatus')?.textContent)")
         # Existing save reconciles and audits; our adapter changes persistence only.
         ff.evaluate("data.projects[0].note='browser-persistence';save()")
         ff.wait_for_function("() => document.querySelector('#sharedStatus').textContent.includes('تم الحفظ')")
@@ -239,7 +331,7 @@ try:
         assert pp.locator('[data-action42="project.commercial"]').count()==1
         pm_context.close()
         assert not errors,errors
-        print(json.dumps({'status':'PASS','checks':['dynamic owner command center','button registry checkpoint','customer-to-project stable identity','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','finance context and route bridge','navigation error rollback','project-filtered claims and cost center','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile primary actions and More','role-based dynamic actions'],'pageErrors':errors},ensure_ascii=False))
+        print(json.dumps({'status':'PASS','checks':['dynamic owner command center','button registry checkpoint','customer-to-project stable identity','single-shell embedded modules','1007 pricing and validation','quotation save and approval','quote-to-contract','contract-to-accounts','finance context and route bridge','navigation error rollback','project-filtered claims and cost center','claim editor, approval, SAR / EGP print, media preservation and receipt matching','V20 audit and persistence','second-session visibility','stale-write conflict','parent polling preserves editor','mobile primary actions and More','role-based dynamic actions'],'pageErrors':errors},ensure_ascii=False))
         browser.close()
 finally:
     if proc:

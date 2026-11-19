@@ -18,7 +18,7 @@ const R20Cloud={state:{user:null}};
   catch(e){pending=pending||payload;blocked=true;status(e.status===409?'تعارض: تعديلاتك محفوظة هنا. نزّلها قبل التحديث.':'لم يصل الحفظ للخادم: '+e.message+' — احتفظ بنسخة ثم أعد المحاولة.');}
   finally{inflight=false;if(pending&&!blocked)timer=setTimeout(flush,100);}
  }
- r14Persist=function(next,action='حفظ',details={}){
+ r14Persist=function(next,action='حفظ',details={},onError=alert){
   try{
    if(importing)throw Error('انتظر اكتمال دمج النسخة قبل تعديل الحسابات.');
    if(blocked)throw Error('الحفظ متوقف. نزّل تعديلاتك قبل تحديث النسخة.');
@@ -28,7 +28,7 @@ const R20Cloud={state:{user:null}};
    if(JSON.stringify(previousLinks)!==JSON.stringify(checked.claimSettlements))checked.auditTrail.push({id:r14Id('AUD'),at:new Date().toISOString(),action:'تحديث ربط التحصيل بالمطالبات',before:previousLinks,after:R14.copy(checked.claimSettlements)});
    checked.auditTrail.push({id:r14Id('AUD'),at:new Date().toISOString(),action,...details});
    pending=R14.validate(checked);data=checked;r14Saved=JSON.stringify(checked);clearTimeout(timer);timer=setTimeout(flush,250);status('تعديلات بانتظار المزامنة…');return true;
-  }catch(e){r14Failures++;status(e.message);alert(e.message);return false;}
+  }catch(e){r14Failures++;status(e.message);onError(e.message);return false;}
  };
  save=function(){return r14Persist(data);};
  async function refresh(force=false){

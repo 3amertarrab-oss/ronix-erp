@@ -146,9 +146,52 @@ function financeImportCommit(d,u,value,expected) {
  const record={id:'FIN-IMPORT-'+plan.summary.importHash.slice(0,16),kind:'finance-v20',importHash:plan.summary.importHash,currentHash:plan.summary.currentHash,previewHash:plan.summary.previewHash,financeRevisionFrom:from,financeRevisionTo:to,counts:copy(plan.summary.counts.incoming),add:copy(plan.summary.add),identical:copy(plan.summary.identical),totals:copy(plan.summary.totals),importedAt:at,importedBy:u.id};
  a.imports.push(record);return {replayed:false,importHash:record.importHash,previewHash:record.previewHash,financeRevision:to,counts:copy(record.counts),add:copy(record.add),identical:copy(record.identical),totals:copy(record.totals),directory,import:copy(record)};
 }
+function validateClaimChanges(previous,payload,user) {
+ const oldClaims=new Map((previous?.claims||[]).map(c=>[c.id,c]));
+ const projects=new Map(payload.projects.map(p=>[p.code,p]));
+ const previousProjects=new Map((previous?.projects||[]).map(p=>[p.code,p]));
+ const lockedProject=p=>!p||p.archivedAt||p.closedAt||['مغلق','منتهي','مكتمل','closed','completed','finished'].includes(String(p.state||'').trim().toLowerCase());
+ const locked=(claim,source=projects)=>R.claimRows(claim).some(row=>lockedProject(source.get(row.code)));
+ const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
+ const trash=new Map((previous?.trashRecords||[]).filter(x=>x.kind==='claim').map(x=>[x.payload?.record?.id,x.payload?.record]));
+ for(const claim of payload.claims){
+  const old=oldClaims.get(claim.id);
+  oldClaims.delete(claim.id);
+  if(same(old,claim)||(!old&&same(trash.get(claim.id),claim)))continue;
+  // Customer/project directory renames synchronize labels separately.
+  if(old&&same({...old,client:claim.client},claim))continue;
+  check(!locked(claim)&&(!old||!locked(old,previousProjects)),'مطالبات المشروع المغلق للعرض فقط',409);
+  const prior=old&&R.status(old),status=R.status(claim);
+  if(status==='بانتظار المدير')check(!old||prior==='مسودة','المراجعة متاحة لمسودات المطالبات',409);
+  if((status==='معتمدة'&&prior!==status)||prior==='بانتظار المدير'){
+   check(user.role==='Owner'&&prior==='بانتظار المدير'&&['معتمدة','مسودة'].includes(status),'اعتماد المطالبة أو إعادتها للمالك فقط',403);
+   check(same({...old,status:claim.status,history:claim.history},claim),'تغيرت بيانات المطالبة أثناء المراجعة',409);
+  }
+  if(R.active(claim)&&(!old||!R.active(old)||!same(R.claimRows(old),R.claimRows(claim)))){
+   for(const row of R.claimRows(claim)){
+    const project=projects.get(row.code);
+    const native=entry=>entry.originalAmount??R.unfx(entry.amount,R.projectRate(project));
+    const priorAmount=R.sum(payload.claims.filter(c=>c.id!==claim.id&&R.active(c))
+     .flatMap(c=>R.claimRows(c).filter(entry=>entry.code===row.code)),native);
+    check(R.cents(priorAmount)+R.cents(native(row))<=R.cents(R.projectOriginalTotal(project)),'المطالبة تتجاوز قيمة العقد بعد المطالبات السابقة',409);
+   }
+  }
+  if(old&&R.active(old)&&R.settled(previous,old.id)>0){
+   check(same({...old,matchMode:claim.matchMode},claim),'المطالبة المسددة للعرض والمطابقة فقط',409);
+  }
+ }
+ for(const old of oldClaims.values()){
+  const archived=(payload.trashRecords||[]).some(row=>row.kind==='claim'&&same(row.payload?.record,old));
+  check(R.status(old)!=='بانتظار المدير'&&R.settled(previous,old.id)===0,'لا يمكن حذف مطالبة قيد المراجعة أو مرتبطة بتحصيل',409);
+  check(archived,'احفظ المطالبة في المحذوفات قبل إزالتها',409);
+  check(!locked(old,previousProjects),'مطالبات المشروع المغلق للعرض فقط',409);
+ }
+}
 function saveFinance(d,u,b) {
  allowed(u,'finance',true); const a=writable(d); revision(a.finance.revision,b.baseRevision);
- const payload=validateFinance(b.payload),codes=new Set(payload.projects.map(p=>p.code));
+ const payload=validateFinance(b.payload);
+ validateClaimChanges(a.finance.payload,payload,u);
+ const codes=new Set(payload.projects.map(p=>p.code));
  check(mediaReferences(payload)===0,'توجد مرفقات سحابية لم تُنزّل. استخدم تصدير JSON الكامل من نسخة الحسابات قبل الاستيراد');
  for(const l of a.links)check(codes.has(l.financeCode),'لا تحذف مشروعًا ماليًا مرتبطًا؛ استخدم الأرشفة');
  for(const l of a.links){const before=a.finance.payload?.projects.find(p=>p.code===l.financeCode),after=payload.projects.find(p=>p.code===l.financeCode);if(before?.unifiedSourceId)check(after.unifiedSourceId===before.unifiedSourceId,'مرجع العقد المرتبط لا يُستبدل من استيراد الحسابات',409);}
