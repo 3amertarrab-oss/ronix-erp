@@ -6,12 +6,21 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
-test('update 009 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '009');
+test('update 010 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '010');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
   assert.match(html, /فتح المركز وكل الفواتير/);
+});
+
+test('update 010 mirrors designer assignment table inside each project', () => {
+  assert.match(html, /const R47ProjectMarketers/);
+  assert.match(html, /تكليفات المسوّقين/);
+  assert.match(html, /<th>المسوّق<\/th><th>التكليف<\/th><th>العمولة<\/th><th>المدفوع<\/th><th>المتبقي<\/th><th>الحالة<\/th><th>الإجراءات<\/th>/);
+  assert.match(html, /R27Marketers\.paymentForm/);
+  assert.match(html, /حذف تكليف مسوق قبل الفوترة/);
+  assert.match(html, /\.r41-project'\)\.forEach\(x=>x\.remove\(\)\)/);
 });
 
 test('update 009 allows safe marketer assignment editing and direct project workflow', () => {

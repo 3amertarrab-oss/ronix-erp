@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "009",
+  "update": "010",
   "completedOn": "2026-11-20",
-  "summary": "إدارة مرنة لتكليفات المسوقين ومسار مباشر من المشروع إلى الفاتورة والدفعة",
+  "summary": "واجهة تكليفات المسوقين مطابقة للمصممين داخل المشروع مع إجراءات مالية آمنة",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
