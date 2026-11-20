@@ -6,12 +6,22 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
-test('update 010 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '010');
+test('update 011 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '011');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
   assert.match(html, /فتح المركز وكل الفواتير/);
+});
+
+test('update 011 separates agreed, unbilled, pending and payable marketer amounts', () => {
+  assert.match(html, /const R48MarketerStages/);
+  assert.match(html, /العمولات المتفق عليها/);
+  assert.match(html, /غير المفوتر/);
+  assert.match(html, /المستحق للدفع/);
+  assert.match(html, /المتبقي المستحق/);
+  assert.match(html, /بانتظار إصدار الفاتورة/);
+  assert.match(html, /مسدد جزئيًا/);
 });
 
 test('update 010 mirrors designer assignment table inside each project', () => {
