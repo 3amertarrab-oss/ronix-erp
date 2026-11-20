@@ -6,8 +6,17 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
+test('update 015 puts a complete claims interface on the dashboard', () => {
+  assert.equal(release.update, '015');
+  assert.match(html, /function dashboardPanel\(\)/);
+  assert.match(html, /المطالبات والتحصيل/);
+  assert.match(html, /تحتاج إجراء الآن/);
+  assert.match(html, /إجمالي المطالبات/);
+  assert.match(html, /عرض كل المطالبات/);
+  assert.match(html, /window\.R50Claims\?window\.R50Claims\.dashboardPanel\(\)/);
+});
+
 test('update 014 provides a dynamic claims workspace and dashboard drill-down', () => {
-  assert.equal(release.update, '014');
   assert.match(html, /const R50Claims/);
   assert.match(html, /مسودات مطالبات تحتاج إكمال/);
   assert.match(html, /مطالبات تنتظر الاعتماد/);
