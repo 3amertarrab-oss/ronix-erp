@@ -6,8 +6,17 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
+test('update 016 previews claims and serializes safe issuance', () => {
+  assert.equal(release.update, '016');
+  assert.match(html, /function preview\(enc\)/);
+  assert.match(html, /معاينة/);
+  assert.match(html, /إصدار المحدد/);
+  assert.match(html, /async function waitSync\(\)/);
+  assert.match(html, /جارٍ إصدار/);
+  assert.match(html, /await issueOne\(id\)/);
+});
+
 test('update 015 puts a complete claims interface on the dashboard', () => {
-  assert.equal(release.update, '015');
   assert.match(html, /function dashboardPanel\(\)/);
   assert.match(html, /المطالبات والتحصيل/);
   assert.match(html, /تحتاج إجراء الآن/);

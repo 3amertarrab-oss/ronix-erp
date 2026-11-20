@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "015",
-  "completedOn": "2026-11-20",
-  "summary": "واجهة مطالبات وتحصيل كاملة داخل لوحة الإدارة مع مؤشرات قابلة للضغط وقائمة إجراءات مباشرة",
+  "update": "016",
+  "completedOn": "2026-11-21",
+  "summary": "إصدار متتابع وآمن للمطالبات مع معاينة احترافية قبل الطباعة ورسائل مزامنة داخل الشاشة",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
