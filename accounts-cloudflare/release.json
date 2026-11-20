@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "008",
+  "update": "009",
   "completedOn": "2026-11-20",
-  "summary": "توحيد المسوقين مع المصممين، مؤشرات المشروع، تايم لاين تفاعلي، واختيار بصري للمشروعات",
+  "summary": "إدارة مرنة لتكليفات المسوقين ومسار مباشر من المشروع إلى الفاتورة والدفعة",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
