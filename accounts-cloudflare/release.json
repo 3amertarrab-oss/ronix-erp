@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "013",
+  "update": "014",
   "completedOn": "2026-11-20",
-  "summary": "إزالة تكرار عنوان وزر لوحة الإدارة مع استعادة الرأس الطبيعي في بقية الأقسام",
+  "summary": "مساحة مطالبات ديناميكية مرتبطة بتنبيهات لوحة الإدارة وحالات الاعتماد والاستحقاق والتحصيل",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }

@@ -6,8 +6,19 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
+test('update 014 provides a dynamic claims workspace and dashboard drill-down', () => {
+  assert.equal(release.update, '014');
+  assert.match(html, /const R50Claims/);
+  assert.match(html, /مسودات مطالبات تحتاج إكمال/);
+  assert.match(html, /مطالبات تنتظر الاعتماد/);
+  assert.match(html, /مطالبات متأخرة/);
+  assert.match(html, /مطالبات مسددة جزئيًا/);
+  assert.match(html, /R50Claims\.open\('overdue'\)/);
+  assert.match(html, /مطابقة تحصيل/);
+  assert.match(html, /new Set\(\['dashboard','projects','claims','customerDirectory'/);
+});
+
 test('update 013 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '013');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
