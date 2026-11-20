@@ -6,12 +6,22 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
-test('update 011 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '011');
+test('update 012 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '012');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
   assert.match(html, /فتح المركز وكل الفواتير/);
+});
+
+test('update 012 provides a task-first progressive executive dashboard', () => {
+  assert.match(html, /const R49ExecutiveDashboard/);
+  assert.match(html, /ما يحتاج قرارك الآن، ثم أهم الأرقام دون تكرار/);
+  assert.match(html, /يحتاج انتباهك/);
+  assert.match(html, /التفاصيل المالية الكاملة/);
+  assert.match(html, /العملاء والتحصيل/);
+  assert.match(html, /المستحقون/);
+  assert.match(html, /السيولة والربح/);
 });
 
 test('update 011 separates agreed, unbilled, pending and payable marketer amounts', () => {

@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "011",
+  "update": "012",
   "completedOn": "2026-11-20",
-  "summary": "فصل عمولة المسوق المتفق عليها عن غير المفوتر والمستحق بعد اعتماد الفاتورة",
+  "summary": "لوحة إدارة تنفيذية مرنة بتنبيهات وأزرار ديناميكية وتفاصيل تدريجية",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
