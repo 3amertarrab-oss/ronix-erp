@@ -6,8 +6,8 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
-test('update 005 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '005');
+test('update 006 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '006');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
@@ -24,4 +24,11 @@ test('marketers appear in dashboard, project view and printed project file', () 
   assert.match(html, /r41-dashboard/);
   assert.match(html, /r41-project/);
   assert.match(html, /عمولات ودفعات المسوّقين/);
+});
+
+test('marketer view does not shadow the global page and collection uses book contract', () => {
+  assert.match(html, /function view\(\)\{return focus\?center\(focus\):directory\(\)\}/);
+  assert.doesNotMatch(html, /function page\(\)\{return focus\?center/);
+  assert.match(html, /R14\.projectBookTotal\(p\)/);
+  assert.match(html, /R41MarketerCenter\.issue/);
 });
