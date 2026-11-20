@@ -6,12 +6,40 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
-test('update 007 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '007');
+test('update 008 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '008');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
   assert.match(html, /فتح المركز وكل الفواتير/);
+});
+
+test('update 008 removes duplicate marketer project panels and adds overview KPIs', () => {
+  assert.match(html, /r41-overview-card/);
+  assert.match(html, /المتبقي للمسوّقين/);
+  assert.match(html, /بانتظار الاعتماد/);
+});
+
+test('update 008 makes project timeline interactive and auditable', () => {
+  assert.match(html, /const R43Timeline/);
+  assert.match(html, /timelineNotes/);
+  assert.match(html, /إضافة ملاحظة/);
+  assert.match(html, /استكمال تاريخ الحركة/);
+  assert.match(html, /حذف ملاحظة/);
+});
+
+test('update 008 stores marketer master profiles before project assignment', () => {
+  assert.match(html, /const R44MarketerDirectory/);
+  assert.match(html, /دليل المسوّقين/);
+  assert.match(html, /المسوّق المسجل/);
+  assert.match(html, /أرشفة مسوق/);
+});
+
+test('update 008 uses searchable visual project cards for global movements', () => {
+  assert.match(html, /const R45MovementPicker/);
+  assert.match(html, /ابحث بالاسم أو الكود أو العميل/);
+  assert.match(html, /المشاريع النشطة/);
+  assert.match(html, /مقفول · عرض فقط/);
 });
 
 test('update 007 supports flexible entitlement, approval and payment vouchers', () => {
