@@ -6,12 +6,22 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
-test('update 006 gives marketers independent centers and complete ledgers', () => {
-  assert.equal(release.update, '006');
+test('update 007 gives marketers independent centers and complete ledgers', () => {
+  assert.equal(release.update, '007');
   assert.match(html, /مركز حساب مسوّق/);
   assert.match(html, /كل فواتير المسوّقين/);
   assert.match(html, /سجل الدفعات/);
   assert.match(html, /فتح المركز وكل الفواتير/);
+});
+
+test('update 007 supports flexible entitlement, approval and payment vouchers', () => {
+  assert.match(html, /collectedPercent/);
+  assert.match(html, /entitlementRule/);
+  assert.match(html, /بانتظار اعتماد المدير/);
+  assert.match(html, /سند دفع للمسوّق/);
+  assert.match(html, /marketer-payment:/);
+  assert.match(html, /كشف حساب مسوّق/);
+  assert.match(html, /رقم الفاتورة مسجل لهذا المسوّق من قبل/);
 });
 
 test('marketer invoices use the protected attachment store', () => {

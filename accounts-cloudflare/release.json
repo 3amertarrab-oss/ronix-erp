@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "006",
+  "update": "007",
   "completedOn": "2026-11-20",
-  "summary": "تصحيح مراكز المسوقين والتحصيل وإظهارهم في ملف المشروع",
+  "summary": "اتفاقات مسوقين مرنة واعتماد فواتير وسندات دفع وكشوف PDF",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
