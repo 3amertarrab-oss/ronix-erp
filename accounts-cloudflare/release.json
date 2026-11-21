@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "022",
+  "update": "023",
   "completedOn": "2026-11-21",
-  "summary": "عرض الوحدة والكمية وسعر الوحدة وإجمالي البنود وقيمة VO بجانب صورة كل مشروع في المعاينة والطباعة",
+  "summary": "مطالبة بأسلوب كشف الحساب مع فصل قيمة التعاقد عن طريقة ونسبة وأساس وقيمة كل VO والدفعات المطابقة",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }

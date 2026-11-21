@@ -39,7 +39,6 @@ test('update 019 renders one compact visual row per project without repeating da
 
 test('update 020 separates all project receipts from claim matching and lists each payment', () => {
   assert.match(html, /const R54ClaimPayments/);
-  assert.match(html, /إجمالي دفعات المشروع/);
   assert.match(html, /المطابق \$\{cash\(matched\)\}/);
   assert.match(html, /دفعات العميل للمشروع/);
   assert.match(html, /r19Ref\('receipt',r\.batchId\|\|r\.id,r\.ref\)/);
@@ -58,7 +57,6 @@ test('update 021 calculates claim availability independently from receipts and p
 });
 
 test('update 022 presents line quantities and VO beside each project image', () => {
-  assert.equal(release.update, '022');
   assert.match(html, /const R56ClaimVisualLine/);
   assert.match(html, /<small>الوحدة<\/small>/);
   assert.match(html, /<small>الكمية<\/small>/);
@@ -69,6 +67,18 @@ test('update 022 presents line quantities and VO beside each project image', () 
   assert.match(html, /accountingUnitPrice\?\?lines\[0\]\.unitPrice/);
   assert.match(html, /x\.accountingAmount\?\?x\.amount/);
   assert.match(html, /إجمالي \$\{cash\(payments\)\} · المطابق \$\{cash\(matched\)\}/);
+});
+
+test('update 023 renders a statement-style claim with independent VO columns', () => {
+  assert.equal(release.update, '023');
+  assert.match(html, /const R57StatementClaim/);
+  assert.match(html, /تفاصيل أمر التغيير VO/);
+  assert.match(html, /قيمة التعاقد الأساسية/);
+  assert.match(html, /أساس الاحتساب/);
+  assert.match(html, /المبلغ الثابت يظهر مستقلًا/);
+  assert.match(html, /voRows\(snapshot\)/);
+  assert.match(html, /rowspan=/);
+  assert.match(html, /الدفعات والمطابقة/);
 });
 
 test('update 016 previews claims and serializes safe issuance', () => {
