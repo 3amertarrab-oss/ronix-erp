@@ -6,8 +6,18 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.html'), 'utf8');
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
+test('update 017 creates recipient-safe claim documents with dated VO snapshots', () => {
+  assert.equal(release.update, '017');
+  assert.match(html, /const R51ClaimDocuments/);
+  assert.match(html, /اختيار نسخة المعاينة/);
+  assert.match(html, /نسخة العميل/);
+  assert.match(html, /كشف المسوّق/);
+  assert.match(html, /نسخة داخلية/);
+  assert.match(html, /contractSnapshot=snapshot\(p,date\)/);
+  assert.match(html, /الاتفاق الأصلي وتعديلات VO المعتمدة/);
+});
+
 test('update 016 previews claims and serializes safe issuance', () => {
-  assert.equal(release.update, '016');
   assert.match(html, /function preview\(enc\)/);
   assert.match(html, /معاينة/);
   assert.match(html, /إصدار المحدد/);
