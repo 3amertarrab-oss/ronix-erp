@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "017",
+  "update": "018",
   "completedOn": "2026-11-21",
-  "summary": "نسخ ديناميكية للمطالبة حسب المستلم مع VO مؤرخة تلقائيًا وإخفاء آمن للعمولة عن العميل",
+  "summary": "إخراج احترافي للمطالبة: صفحة وصورة كبيرة لكل مشروع وتفاصيل VO والموقف المالي بوضوح للعميل",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }

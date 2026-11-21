@@ -7,7 +7,6 @@ const html = fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/index.
 const release = JSON.parse(fs.readFileSync(path.join(__dirname, '../accounts-cloudflare/release.json'), 'utf8'));
 
 test('update 017 creates recipient-safe claim documents with dated VO snapshots', () => {
-  assert.equal(release.update, '017');
   assert.match(html, /const R51ClaimDocuments/);
   assert.match(html, /اختيار نسخة المعاينة/);
   assert.match(html, /نسخة العميل/);
@@ -15,6 +14,18 @@ test('update 017 creates recipient-safe claim documents with dated VO snapshots'
   assert.match(html, /نسخة داخلية/);
   assert.match(html, /contractSnapshot=snapshot\(p,date\)/);
   assert.match(html, /الاتفاق الأصلي وتعديلات VO المعتمدة/);
+});
+
+test('update 018 presents one large visual project story with detailed VO and financial position', () => {
+  assert.equal(release.update, '018');
+  assert.match(html, /const R52ClaimPresentation/);
+  assert.match(html, /project-cover/);
+  assert.match(html, /الاتفاق وأوامر التغيير VO/);
+  assert.match(html, /قيمة الاتفاق الحالية بعد VO/);
+  assert.match(html, /الموقف المالي للمشروع/);
+  assert.match(html, /المطابق مع هذه المطالبة/);
+  assert.match(html, /مسودة — غير صالحة للإرسال أو التحصيل/);
+  assert.match(html, /page-break-before:always/);
 });
 
 test('update 016 previews claims and serializes safe issuance', () => {
