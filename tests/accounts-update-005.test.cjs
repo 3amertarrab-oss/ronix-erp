@@ -38,13 +38,24 @@ test('update 019 renders one compact visual row per project without repeating da
 });
 
 test('update 020 separates all project receipts from claim matching and lists each payment', () => {
-  assert.equal(release.update, '020');
   assert.match(html, /const R54ClaimPayments/);
   assert.match(html, /إجمالي دفعات المشروع/);
   assert.match(html, /المطابق مع المطالبة/);
   assert.match(html, /دفعات العميل للمشروع/);
   assert.match(html, /r19Ref\('receipt',r\.batchId\|\|r\.id,r\.ref\)/);
   assert.match(html, /payments=R14\.sum\(receipts,'amount'\)/);
+});
+
+test('update 021 calculates claim availability independently from receipts and prevents duplicate project picks', () => {
+  assert.equal(release.update, '021');
+  assert.match(html, /const R55ClaimAccuracy/);
+  assert.match(html, /التحصيل لا يخفض الأعمال المتاحة للمطالبة/);
+  assert.match(html, /R14\.delta\(R14\.projectOriginalTotal\(p\),priorOriginal/);
+  assert.match(html, /استخدام المتاح للمطالبة/);
+  assert.match(html, /مضاف للمطالبة/);
+  assert.match(html, /مراجعة حسابية قبل الحفظ/);
+  assert.match(html, /تحصيل غير مستخدم/);
+  assert.match(html, /R14\.delta\(r\.amount,R14\.usedReceipt\(data,r\.id,c\.id\)\)>0/);
 });
 
 test('update 016 previews claims and serializes safe issuance', () => {

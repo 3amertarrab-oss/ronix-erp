@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "020",
+  "update": "021",
   "completedOn": "2026-11-21",
-  "summary": "إظهار إجمالي وقائمة دفعات كل مشروع مع فصلها بوضوح عن المطابقة الخاصة بالمطالبة الحالية",
+  "summary": "مراجعة حسابية دقيقة للمطالبات، زر استخدام المتاح، ومنع بصري لتكرار المشروع مع مطابقة الدفعات السابقة غير المستخدمة",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
