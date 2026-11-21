@@ -17,7 +17,6 @@ test('update 017 creates recipient-safe claim documents with dated VO snapshots'
 });
 
 test('update 018 presents one large visual project story with detailed VO and financial position', () => {
-  assert.equal(release.update, '018');
   assert.match(html, /const R52ClaimPresentation/);
   assert.match(html, /project-cover/);
   assert.match(html, /الاتفاق وأوامر التغيير VO/);
@@ -26,6 +25,17 @@ test('update 018 presents one large visual project story with detailed VO and fi
   assert.match(html, /المطابق مع هذه المطالبة/);
   assert.match(html, /مسودة — غير صالحة للإرسال أو التحصيل/);
   assert.match(html, /page-break-before:always/);
+});
+
+test('update 019 renders one compact visual row per project without repeating data', () => {
+  assert.equal(release.update, '019');
+  assert.match(html, /const R53CompactClaims/);
+  assert.match(html, /project-row/);
+  assert.match(html, /project-image/);
+  assert.match(html, /كل مشروع مع صورته وقيمه مرة واحدة/);
+  assert.match(html, /تفاصيل VO/);
+  assert.match(html, /بنود المطالبة/);
+  assert.match(html, /project-details\{display:none\}/);
 });
 
 test('update 016 previews claims and serializes safe issuance', () => {

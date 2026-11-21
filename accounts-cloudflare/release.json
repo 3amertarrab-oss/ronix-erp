@@ -1,8 +1,8 @@
 {
   "product": "حسابات RONIX",
-  "update": "018",
+  "update": "019",
   "completedOn": "2026-11-21",
-  "summary": "إخراج احترافي للمطالبة: صفحة وصورة كبيرة لكل مشروع وتفاصيل VO والموقف المالي بوضوح للعميل",
+  "summary": "مطالبة مختصرة بسطر بصري واحد وصورة كبيرة لكل مشروع، دون تكرار البيانات ومع تفاصيل اختيارية",
   "dataStore": "Supabase",
   "dataPolicy": "Additive tables only; existing projects, claims, receipts, images and attachments are preserved."
 }
