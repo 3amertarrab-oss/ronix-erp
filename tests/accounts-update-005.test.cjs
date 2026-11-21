@@ -28,7 +28,6 @@ test('update 018 presents one large visual project story with detailed VO and fi
 });
 
 test('update 019 renders one compact visual row per project without repeating data', () => {
-  assert.equal(release.update, '019');
   assert.match(html, /const R53CompactClaims/);
   assert.match(html, /project-row/);
   assert.match(html, /project-image/);
@@ -36,6 +35,16 @@ test('update 019 renders one compact visual row per project without repeating da
   assert.match(html, /تفاصيل VO/);
   assert.match(html, /بنود المطالبة/);
   assert.match(html, /project-details\{display:none\}/);
+});
+
+test('update 020 separates all project receipts from claim matching and lists each payment', () => {
+  assert.equal(release.update, '020');
+  assert.match(html, /const R54ClaimPayments/);
+  assert.match(html, /إجمالي دفعات المشروع/);
+  assert.match(html, /المطابق مع المطالبة/);
+  assert.match(html, /دفعات العميل للمشروع/);
+  assert.match(html, /r19Ref\('receipt',r\.batchId\|\|r\.id,r\.ref\)/);
+  assert.match(html, /payments=R14\.sum\(receipts,'amount'\)/);
 });
 
 test('update 016 previews claims and serializes safe issuance', () => {
